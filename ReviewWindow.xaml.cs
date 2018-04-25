@@ -420,8 +420,9 @@ namespace PatchReviewer
 				return;
 			}
 
-			if (userPatch != null)
-				userPatch.start1 -= result.searchOffset;
+			//Can't remember what this was for, but it currently ruins the range marking
+			/*if (userPatch != null)
+				userPatch.start1 -= result.searchOffset;*/
 
 			ReloadUserPatch();
 		}
