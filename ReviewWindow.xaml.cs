@@ -288,7 +288,7 @@ namespace PatchReviewer
 
 		#region Result and Patch Functions
 
-		private bool CanSave => file != null && !CanRevert && file.userModified && !ResultsAreValuable(file);
+		private bool CanSave => file != null && !CanRevert && file.userModified;
 
 		private bool CanRevert => file != null && filePanel.IsModified || result != null && patchPanel.IsModified;
 
@@ -532,7 +532,7 @@ namespace PatchReviewer
 			UpdateItem(FindItem(file), file, false);
 			ReloadPanes(file, result, true);
 
-			if (CanSave) {
+			if (CanSave && !ResultsAreValuable(file)) {
 				var save = new CustomMessageBox {
 					Title = "Save?",
 					Message = "All items requiring user review have been approved. Save patch and results?",
@@ -634,18 +634,38 @@ namespace PatchReviewer
 			file.userModified = true;
 		}
 
-		private void SaveFile(PatchedFile f) {
-			RepatchFile(f);
-			if (ResultsAreValuable(f)) {
-				new CustomMessageBox {
-					Title = "Save Failed",
-					Message = "Some patches did not apply perfectly. Cannot save in this state.",
-					Image = MessageBoxImage.Error
-				}.ShowDialogOk();
-			}
+		private void SaveFile(PatchedFile f)
+		{
+			bool onlySavePatches = ResultsAreValuable(f);
+			if (onlySavePatches) {
+				var choice = new CustomMessageBox {
+					Title = "Unapproved patches",
+					Message = "Any failed or fuzzy patches will be saved in their original state. Only the patch file will be saved",
+					Image = MessageBoxImage.Warning
+				}.ShowDialogOkCancel("Save");
 
-			f.patchFile.patches = f.results.Select(r => r.appliedPatch).ToList();
-			ReloadFile(f);
+				if (choice == MessageBoxResult.Cancel)
+					return;
+				
+				f.patchFile.patches = f.results
+					.Where(r => !IsRemoved(r))
+					.Select(r => r.success && r.mode != Patcher.Mode.FUZZY ? r.appliedPatch : r.patch)
+					.ToList();
+			}
+			else
+			{
+				RepatchFile(f);
+				if (ResultsAreValuable(f)) {
+					new CustomMessageBox {
+						Title = "Save Failed",
+						Message = "Some patches did not apply perfectly. Cannot save in this state.",
+						Image = MessageBoxImage.Error
+					}.ShowDialogOk();
+					return;
+				}
+
+				f.patchFile.patches = f.results.Select(r => r.appliedPatch).ToList();
+			}
 
 			if (f.patchFile.patches.Count == 0) {
 				new CustomMessageBox {
@@ -660,7 +680,10 @@ namespace PatchReviewer
 				File.WriteAllText(f.patchFilePath, f.patchFile.ToString());
 			}
 
-			File.WriteAllLines(f.PatchedPath, f.patched);
+			ReloadFile(f);
+
+			if (!onlySavePatches)
+				File.WriteAllLines(f.PatchedPath, f.patched);
 		}
 
 		private void ReloadFile(PatchedFile file) {
