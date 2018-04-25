@@ -522,7 +522,9 @@ namespace PatchReviewer
 			file.userModified = true;
 			
 			for (int i = file.results.IndexOf(result) + 1; i < file.results.Count; i++) {
-				file.results[i].appliedPatch.start2 += delta;
+				var r = file.results[i];
+				if (r.appliedPatch != null)
+					r.appliedPatch.start2 += delta;
 				//TODO maybe searchoffset
 			}
 
