@@ -6,6 +6,7 @@ using System.Windows.Media;
 using ICSharpCode.AvalonEdit;
 using ICSharpCode.AvalonEdit.Highlighting;
 using DiffPatch;
+using ICSharpCode.AvalonEdit.Search;
 
 namespace PatchReviewer
 {
@@ -136,6 +137,7 @@ namespace PatchReviewer
 			options.ShowTabs = true;
 			options.InheritWordWrapIndentation = false;
 			textEditor1.ApplyTemplate();
+			SearchPanel.Install(textEditor1);
 
 			double requestedH = 0, requestedV = 0;
 			textEditor1.GetScrollViewer().ScrollChanged += (sender, args) => {
