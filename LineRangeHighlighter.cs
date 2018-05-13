@@ -54,6 +54,8 @@ namespace PatchReviewer
 		}
 
 		public void ScrollTo() {
+			if (!Valid)
+				return;
 
 			var top = textView.GetVisualPosition(new TextViewPosition(startAnchor.Location), VisualYPosition.LineTop).Y;
 			var bottom = textView.GetVisualPosition(new TextViewPosition(endAnchor.Location), VisualYPosition.LineBottom).Y;

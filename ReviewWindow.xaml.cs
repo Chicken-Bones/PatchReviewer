@@ -369,9 +369,11 @@ namespace PatchReviewer
 				filePanel.MarkRange(
 					new Range {start = userPatch.start1, length = userPatch.length1},
 					new Range {start = userPatch.start2, length = userPatch.length2});
-			else
+			else if (result.patch.start1 + result.patch.length1 <= file.original.Length)
 				filePanel.MarkRange(
 					new Range {start = result.patch.start1, length = result.patch.length1});
+			else
+				filePanel.ClearRangeMarkers();
 
 			var editPatch = userPatch;
 			if (editPatch == null) { //removed or failed
