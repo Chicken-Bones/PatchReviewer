@@ -62,6 +62,8 @@ namespace PatchReviewer
 
 		#endregion
 
+		public bool AutoHeaders { get; set; }
+
 		private readonly List<PatchedFile> files;
 
 		private PatchedFile file;
@@ -685,7 +687,7 @@ namespace PatchReviewer
 				File.Delete(f.patchFilePath);
 			}
 			else {
-				File.WriteAllText(f.patchFilePath, f.patchFile.ToString());
+				File.WriteAllText(f.patchFilePath, f.patchFile.ToString(AutoHeaders));
 			}
 
 			ReloadFile(f);
