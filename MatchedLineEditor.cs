@@ -15,7 +15,7 @@ using DiffPatch;
 
 namespace PatchReviewer
 {
-	internal class MatchedLineEditor : DependencyObject, IBackgroundRenderer
+	internal class MatchedLineEditor : IBackgroundRenderer
 	{
 		public static readonly Color MatchedBackground = Colors.LightBlue;
 		public static readonly Color MatchedHighlightBackground = Color.FromRgb(191, 239, 255);
