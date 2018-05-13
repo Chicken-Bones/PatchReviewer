@@ -651,6 +651,14 @@ namespace PatchReviewer
 					.Where(r => !IsRemoved(r))
 					.Select(r => r.success && r.mode != Patcher.Mode.FUZZY ? r.appliedPatch : r.patch)
 					.ToList();
+				
+				//recalculate offsets
+				int delta = 0;
+				foreach (var p in f.patchFile.patches)
+				{
+					p.start2 = p.start1 + delta;
+					delta += p.length2 - p.length1;
+				}
 			}
 			else
 			{
