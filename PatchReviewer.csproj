@@ -101,7 +101,6 @@
     <Compile Include="LineRangeHighlighter.cs" />
     <Compile Include="MatchedLineEditor.cs" />
     <Compile Include="MatchedLineTree.cs" />
-    <Compile Include="PatchedFile.cs" />
     <Compile Include="ReviewWindow.xaml.cs">
       <DependentUpon>ReviewWindow.xaml</DependentUpon>
     </Compile>

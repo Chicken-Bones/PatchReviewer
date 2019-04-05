@@ -63,10 +63,12 @@ namespace PatchReviewer
 		#endregion
 
 		public bool AutoHeaders { get; set; }
+		public Func<FilePatcher, string> ItemLabeller { get; set; } = pf => pf.patchFile.basePath;
 
-		private readonly List<PatchedFile> files;
+		private readonly List<FilePatcher> files;
 
-		private PatchedFile file;
+		private FilePatcher file;
+		private bool fileModified;
 		private Patcher.Result result;
 		private Range leftEditRange, rightEditRange;
 
@@ -75,10 +77,10 @@ namespace PatchReviewer
 
 		private TreeViewItem currentItem;
 
-		public ReviewWindow(IEnumerable<PatchedFile> files) {
+		public ReviewWindow(IEnumerable<FilePatcher> files) {
 			InitializeComponent();
 
-			this.files = files.OrderBy(r => r.title).ToList();
+			this.files = files.OrderBy(ItemLabeller).ToList();
 			PopulateTreeView();
 			SetupEditors();
 			
@@ -107,8 +109,8 @@ namespace PatchReviewer
 				treeView.Items.Add(UpdateItem(new TreeViewItem(), f, true));
 		}
 
-		private TreeViewItem UpdateItem(TreeViewItem item, PatchedFile f, bool regenChildren) {
-			item.Header = f.title;
+		private TreeViewItem UpdateItem(TreeViewItem item, FilePatcher f, bool regenChildren) {
+			item.Header = ItemLabeller(f);
 			item.Background = StatusBrush(GetStatus(f));
 			item.Tag = f;
 			SetItemModifiedStyle(item, false);
@@ -188,7 +190,7 @@ namespace PatchReviewer
 			return (T) parent.Items[i];
 		}
 
-		private TreeViewItem FindItem(PatchedFile file, Patcher.Result result = null) {
+		private TreeViewItem FindItem(FilePatcher file, Patcher.Result result = null) {
 			var item = treeView.Items.Cast<TreeViewItem>().Single(t => t.Tag == file);
 			if (result != null)
 				item = item.Items.Cast<TreeViewItem>().Single(t => t.Tag == result);
@@ -237,10 +239,10 @@ namespace PatchReviewer
 			}
 
 			currentItem = (TreeViewItem) e.NewValue;
-			if (currentItem.Tag is PatchedFile patchedFile)
+			if (currentItem.Tag is FilePatcher patchedFile)
 				ReloadPanes(patchedFile, null);
 			else
-				ReloadPanes((PatchedFile) ((TreeViewItem) currentItem.Parent).Tag, (Patcher.Result) currentItem.Tag);
+				ReloadPanes((FilePatcher) ((TreeViewItem) currentItem.Parent).Tag, (Patcher.Result) currentItem.Tag);
 		}
 
 		private void TabControl_OnSelectionChanged(object sender, SelectionChangedEventArgs e) {
@@ -279,18 +281,18 @@ namespace PatchReviewer
 			return ResultStatus.EXACT;
 		}
 
-		private static ResultStatus GetStatus(PatchedFile f) =>
+		private static ResultStatus GetStatus(FilePatcher f) =>
 			f.results.Count == 0 ? ResultStatus.EXACT :
 			f.results.Select(GetStatus).Min();
 
-		public bool IsRemoved(Patcher.Result r) =>
+		private static bool IsRemoved(Patcher.Result r) =>
 			r.success && r.appliedPatch == null;
 
 		#endregion
 
 		#region Result and Patch Functions
 
-		private bool CanSave => file != null && !CanRevert && file.userModified;
+		private bool CanSave => file != null && !CanRevert && fileModified;
 
 		private bool CanRevert => file != null && filePanel.IsModified || result != null && patchPanel.IsModified;
 
@@ -298,24 +300,24 @@ namespace PatchReviewer
 		
 		private bool UserPatchRemoved => result != null && result.success && userPatch == null;
 
-		private bool ResultsAreValuable(PatchedFile f) => GetStatus(f) < ResultStatus.OFFSET;
+		private static bool ResultsAreValuable(FilePatcher f) => GetStatus(f) < ResultStatus.OFFSET;
 
-		private void ReloadPanes(PatchedFile f, Patcher.Result r, bool force = false) {
+		private void ReloadPanes(FilePatcher f, Patcher.Result r, bool force = false) {
 			bool newFile = file != f;
 			file = f;
 			result = r;
 
 			if (result == null) {
-				titleLabel.Content = file.title;
+				titleLabel.Content = ItemLabeller(file);
 				titleLabel.Background = StatusBrush(GetStatus(file));
 			}
 			else {
-				titleLabel.Content = file.title + " " + result.Summary();
+				titleLabel.Content = ItemLabeller(file) + " " + result.Summary();
 				titleLabel.Background = StatusBrush(GetStatus(result));
 			}
 
 			if (newFile || force) {
-				filePanel.LoadDiff(file.original, file.patched);
+				filePanel.LoadDiff(file.baseLines, file.patchedLines);
 				filePanel.SyntaxHighlighting =
 					HighlightingManager.Instance.GetDefinitionByExtension(Path.GetExtension(file.patchFile.basePath));
 			}
@@ -344,8 +346,8 @@ namespace PatchReviewer
 		}
 
 		private void ReCalculateEditRange() {
-			leftEditRange = new Range {start = 0, end = file.original.Length};
-			rightEditRange = new Range {start = 0, end = file.patched.Length};
+			leftEditRange = new Range {start = 0, end = file.baseLines.Length};
+			rightEditRange = new Range {start = 0, end = file.patchedLines.Length};
 
 			int i = file.results.IndexOf(result);
 			var prev = file.results.Take(i).LastOrDefault(r => r.appliedPatch != null);
@@ -369,7 +371,7 @@ namespace PatchReviewer
 				filePanel.MarkRange(
 					new Range {start = userPatch.start1, length = userPatch.length1},
 					new Range {start = userPatch.start2, length = userPatch.length2});
-			else if (result.patch.start1 + result.patch.length1 <= file.original.Length)
+			else if (result.patch.start1 + result.patch.length1 <= file.baseLines.Length)
 				filePanel.MarkRange(
 					new Range {start = result.patch.start1, length = result.patch.length1});
 			else
@@ -396,10 +398,10 @@ namespace PatchReviewer
 		}
 
 		private void Repatch(IEnumerable<Patch> patches, Patcher.Mode mode) {
-			var patcher = new Patcher(patches, file.original);
+			var patcher = new Patcher(patches, file.baseLines);
 			patcher.Patch(mode);
 			file.results = patcher.Results.ToList();
-			file.patched = patcher.ResultLines;
+			file.patchedLines = patcher.ResultLines;
 
 			UpdateItem(FindItem(file), file, true);
 			ReloadPanes(file, null, true);
@@ -407,7 +409,7 @@ namespace PatchReviewer
 
 		private void RediffFile() {
 			Repatch(filePanel.Diff(), Patcher.Mode.OFFSET);
-			file.userModified = true;
+			fileModified = true;
 		}
 
 		private void RediffFileEditor() {
@@ -432,9 +434,9 @@ namespace PatchReviewer
 		}
 
 		private IEnumerable<string> PatchedLinesExcludingCurrentResult =>
-			file.patched.Slice(new Range {start = 0, end = rightEditRange.start})
-				.Concat(file.original.Slice(leftEditRange))
-				.Concat(file.patched.Slice(new Range {start = rightEditRange.end, end = file.patched.Length}));
+			file.patchedLines.Slice(new Range {start = 0, end = rightEditRange.start})
+				.Concat(file.baseLines.Slice(leftEditRange))
+				.Concat(file.patchedLines.Slice(new Range {start = rightEditRange.end, end = file.patchedLines.Length}));
 
 		private void RediffPatchEditor() {
 			patchPanel.ReDiff();
@@ -485,7 +487,7 @@ namespace PatchReviewer
 			userPatch = r.appliedPatch;
 			userPatch.start1 -= rightEditRange.start - leftEditRange.start;
 			
-			filePanel.LoadDiff(file.original, patcher.ResultLines, true, false);
+			filePanel.LoadDiff(file.baseLines, patcher.ResultLines, true, false);
 			filePanel.SetEditableRange(new Range { start = rightEditRange.start, 
 				length = leftEditRange.length + userPatch.length2 - userPatch.length1});
 
@@ -523,8 +525,8 @@ namespace PatchReviewer
 			result.success = true;
 			result.mode = Patcher.Mode.EXACT;
 			result.appliedPatch = userPatch;
-			file.patched = (userPatch != null ? filePanel.EditedLines : PatchedLinesExcludingCurrentResult).ToArray();
-			file.userModified = true;
+			file.patchedLines = (userPatch != null ? filePanel.EditedLines : PatchedLinesExcludingCurrentResult).ToArray();
+			fileModified = true;
 			
 			for (int i = file.results.IndexOf(result) + 1; i < file.results.Count; i++) {
 				var r = file.results[i];
@@ -543,7 +545,7 @@ namespace PatchReviewer
 					Image = MessageBoxImage.Question
 				}.ShowDialogOkCancel("Save");
 				if (save == MessageBoxResult.OK)
-					SaveFile(file);
+					SaveFile();
 			}
 
 			return MessageBoxResult.OK;
@@ -631,16 +633,15 @@ namespace PatchReviewer
 			return choice;
 		}
 
-		private void RepatchFile(PatchedFile file) {
-
+		private void RepatchFile() {
 			var patches = file.results.Where(r => !IsRemoved(r)).Select(r => r.success ? r.appliedPatch : r.patch);
 			Repatch(patches, Patcher.Mode.OFFSET);
-			file.userModified = true;
+			fileModified = true;
 		}
 
-		private void SaveFile(PatchedFile f)
+		private void SaveFile()
 		{
-			bool onlySavePatches = ResultsAreValuable(f);
+			bool onlySavePatches = ResultsAreValuable(file);
 			if (onlySavePatches) {
 				var choice = new CustomMessageBox {
 					Title = "Unapproved patches",
@@ -651,14 +652,14 @@ namespace PatchReviewer
 				if (choice == MessageBoxResult.Cancel)
 					return;
 				
-				f.patchFile.patches = f.results
+				file.patchFile.patches = file.results
 					.Where(r => !IsRemoved(r))
 					.Select(r => r.success && r.mode != Patcher.Mode.FUZZY ? r.appliedPatch : r.patch)
 					.ToList();
 				
 				//recalculate offsets
 				int delta = 0;
-				foreach (var p in f.patchFile.patches)
+				foreach (var p in file.patchFile.patches)
 				{
 					p.start2 = p.start1 + delta;
 					delta += p.length2 - p.length1;
@@ -666,8 +667,8 @@ namespace PatchReviewer
 			}
 			else
 			{
-				RepatchFile(f);
-				if (ResultsAreValuable(f)) {
+				RepatchFile();
+				if (ResultsAreValuable(file)) {
 					new CustomMessageBox {
 						Title = "Save Failed",
 						Message = "Some patches did not apply perfectly. Cannot save in this state.",
@@ -676,31 +677,31 @@ namespace PatchReviewer
 					return;
 				}
 
-				f.patchFile.patches = f.results.Select(r => r.appliedPatch).ToList();
+				file.patchFile.patches = file.results.Select(r => r.appliedPatch).ToList();
 			}
 
-			if (f.patchFile.patches.Count == 0) {
+			if (file.patchFile.patches.Count == 0) {
 				new CustomMessageBox {
 					Title = "Patch File Deleted",
 					Message = "Patch file was deleted as all patches were removed.",
 					Image = MessageBoxImage.Information
 				}.ShowDialogOk();
 
-				File.Delete(f.patchFilePath);
+				File.Delete(file.patchFilePath);
 			}
 			else {
-				File.WriteAllText(f.patchFilePath, f.patchFile.ToString(AutoHeaders));
+				File.WriteAllText(file.patchFilePath, file.patchFile.ToString(AutoHeaders));
 			}
 
-			ReloadFile(f);
+			ReloadFile();
 
 			if (!onlySavePatches)
-				File.WriteAllLines(f.PatchedPath, f.patched);
+				file.Save();
 		}
 
-		private void ReloadFile(PatchedFile file) {
+		private void ReloadFile() {
 			Repatch(file.patchFile.patches, Patcher.Mode.FUZZY);
-			file.userModified = false;
+			fileModified = false;
 		}
 
 		#endregion
@@ -712,14 +713,14 @@ namespace PatchReviewer
 		}
 
 		private void ExecuteSave(object sender, ExecutedRoutedEventArgs e) {
-			SaveFile(file);
+			SaveFile();
 		}
 
 		private void CanExecuteReloadFile(object sender, CanExecuteRoutedEventArgs e) {
 			if (file == null)
 				return;
 
-			e.CanExecute = file.userModified || filePanel.IsModified;
+			e.CanExecute = fileModified || filePanel.IsModified;
 			SetItemModifiedStyle(FindItem(file), e.CanExecute);
 		}
 
@@ -732,7 +733,7 @@ namespace PatchReviewer
 			if (choice == MessageBoxResult.Cancel)
 				return;
 
-			ReloadFile(file);
+			ReloadFile();
 		}
 
 		private void CanExecuteNextReviewItem(object sender, CanExecuteRoutedEventArgs e) {
@@ -786,7 +787,7 @@ namespace PatchReviewer
 					return;
 			}
 
-			RepatchFile(file);
+			RepatchFile();
 		}
 
 		private void CanExecuteRediff(object sender, CanExecuteRoutedEventArgs e) {

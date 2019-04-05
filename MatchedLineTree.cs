@@ -209,16 +209,9 @@ namespace PatchReviewer
 		}
 
 		public static MatchedLineTree FromLines(IReadOnlyList<string> leftLines, IReadOnlyList<string> rightLines) {
-			var charRep = new CharRepresenter();
-			var matches = new PatienceDiff(leftLines, rightLines, charRep).Match();
-
-			var wmOriginal = leftLines.Select(charRep.WordsToChars).ToArray();
-			var wmPatched = rightLines.Select(charRep.WordsToChars).ToArray();
-			new FuzzyLineMatcher().MatchLinesByWords(matches, wmOriginal, wmPatched);
-
-			var matchedLines = new MatchedLineTree(matches, rightLines.Count);
-			matchedLines.CompareMatched(wmOriginal, wmPatched, charRep);
-
+			var lmDiff = new LineMatchedDiffer(leftLines, rightLines);
+			var matchedLines = new MatchedLineTree(lmDiff.Match(), rightLines.Count);
+			matchedLines.CompareMatched(lmDiff.WordModeLines1, lmDiff.WordModeLines2, lmDiff.charRep);
 			return matchedLines;
 		}
 

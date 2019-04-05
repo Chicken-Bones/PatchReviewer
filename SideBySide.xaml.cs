@@ -200,14 +200,7 @@ namespace PatchReviewer
 			var lines1 = leftMatchEditor.UnderlyingLines;
 			var lines2 = rightMatchEditor.UnderlyingLines;
 			var matches = MatchedLineTree.ToMatches(lineTree, lines1.Count);
-			
-			var patch = new Patch {
-				start1 = 0, length1 = lines1.Count,
-				start2 = 0, length2 = lines2.Count,
-				diffs = LineMatching.MakeDiffList(matches, lines1, lines2)
-			};
-			patch.Trim(PatienceDiff.DefaultContext);
-			return patch.Split(PatienceDiff.DefaultContext);
+			return Differ.MakePatches(LineMatching.MakeDiffList(matches, lines1, lines2));
 		}
 
 		public Patch DiffEditableRange() {
@@ -250,7 +243,7 @@ namespace PatchReviewer
 				start2 = range2.start, length2 = range2.length,
 				diffs = LineMatching.MakeDiffList(matches, lines1, lines2)
 			};
-			patch.Trim(PatienceDiff.DefaultContext);
+			patch.Trim(Differ.DefaultContext);
 			return patch.length1 > 0 ? patch : null;
 		}
 	}
