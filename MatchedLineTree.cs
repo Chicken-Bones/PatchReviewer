@@ -209,7 +209,7 @@ namespace PatchReviewer
 		}
 
 		public static MatchedLineTree FromLines(IReadOnlyList<string> leftLines, IReadOnlyList<string> rightLines) {
-			var lmDiff = new LineMatchedDiffer(leftLines, rightLines);
+			var lmDiff = new LineMatchedDiffer(leftLines, rightLines) { MinMatchScore = 0 };
 			var matchedLines = new MatchedLineTree(lmDiff.Match(), rightLines.Count);
 			matchedLines.CompareMatched(lmDiff.WordModeLines1, lmDiff.WordModeLines2, lmDiff.charRep);
 			return matchedLines;
