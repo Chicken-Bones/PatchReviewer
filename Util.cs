@@ -41,7 +41,7 @@ namespace PatchReviewer
 		public static ScrollViewer GetScrollViewer(this TextEditor textEditor) =>
 			(ScrollViewer) scrollViewerField.GetValue(textEditor);
 
-		public static ISegment SimpleSegment(this Range range) =>
+		public static ISegment SimpleSegment(this LineRange range) =>
 			new RangeSegment {
 				Offset = range.start,
 				Length = range.length

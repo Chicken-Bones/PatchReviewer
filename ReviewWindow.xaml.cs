@@ -70,7 +70,7 @@ namespace PatchReviewer
 		private FilePatcher file;
 		private bool fileModified;
 		private Patcher.Result result;
-		private Range leftEditRange, rightEditRange;
+		private LineRange leftEditRange, rightEditRange;
 
 		private bool editorsInSync;
 		private Patch userPatch;
@@ -346,8 +346,8 @@ namespace PatchReviewer
 		}
 
 		private void ReCalculateEditRange() {
-			leftEditRange = new Range {start = 0, end = file.baseLines.Length};
-			rightEditRange = new Range {start = 0, end = file.patchedLines.Length};
+			leftEditRange = new LineRange { start = 0, end = file.baseLines.Length};
+			rightEditRange = new LineRange { start = 0, end = file.patchedLines.Length};
 
 			int i = file.results.IndexOf(result);
 			var prev = file.results.Take(i).LastOrDefault(r => r.appliedPatch != null);
@@ -369,11 +369,11 @@ namespace PatchReviewer
 			//mark patch ranges
 			if (userPatch != null)
 				filePanel.MarkRange(
-					new Range {start = userPatch.start1, length = userPatch.length1},
-					new Range {start = userPatch.start2, length = userPatch.length2});
+					new LineRange { start = userPatch.start1, length = userPatch.length1},
+					new LineRange { start = userPatch.start2, length = userPatch.length2});
 			else if (result.patch.start1 + result.patch.length1 <= file.baseLines.Length)
 				filePanel.MarkRange(
-					new Range {start = result.patch.start1, length = result.patch.length1});
+					new LineRange { start = result.patch.start1, length = result.patch.length1});
 			else
 				filePanel.ClearRangeMarkers();
 
@@ -434,9 +434,9 @@ namespace PatchReviewer
 		}
 
 		private IEnumerable<string> PatchedLinesExcludingCurrentResult =>
-			file.patchedLines.Slice(new Range {start = 0, end = rightEditRange.start})
+			file.patchedLines.Slice(new LineRange { start = 0, end = rightEditRange.start})
 				.Concat(file.baseLines.Slice(leftEditRange))
-				.Concat(file.patchedLines.Slice(new Range {start = rightEditRange.end, end = file.patchedLines.Length}));
+				.Concat(file.patchedLines.Slice(new LineRange { start = rightEditRange.end, end = file.patchedLines.Length}));
 
 		private void RediffPatchEditor() {
 			patchPanel.ReDiff();
@@ -473,7 +473,7 @@ namespace PatchReviewer
 					return;
 			}
 
-			if (!new Range{start = rightEditRange.start, length = leftEditRange.length}.Contains(trimmed.Range1)) {
+			if (!new LineRange { start = rightEditRange.start, length = leftEditRange.length}.Contains(trimmed.Range1)) {
 				new CustomMessageBox {
 					Title = "Patch Failed",
 					Message = $"Patch applied ({r.mode}) with modifications {trimmed.Range1} outside the editable range {leftEditRange}",
@@ -488,7 +488,7 @@ namespace PatchReviewer
 			userPatch.start1 -= rightEditRange.start - leftEditRange.start;
 			
 			filePanel.LoadDiff(file.baseLines, patcher.ResultLines, true, false);
-			filePanel.SetEditableRange(new Range { start = rightEditRange.start, 
+			filePanel.SetEditableRange(new LineRange { start = rightEditRange.start, 
 				length = leftEditRange.length + userPatch.length2 - userPatch.length1});
 
 			ReloadUserPatch(r.mode != Patcher.Mode.FUZZY);

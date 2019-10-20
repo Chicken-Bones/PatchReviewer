@@ -169,13 +169,13 @@ namespace PatchReviewer
 				rightMatchEditor.DiscardOriginalFileMarker();
 		}
 
-		public void MarkRange(Range leftRange, Range rightRange) {
-			var range = Range.Union(leftMatchEditor.FromUnderlying(leftRange), rightMatchEditor.FromUnderlying(rightRange));
+		public void MarkRange(LineRange leftRange, LineRange rightRange) {
+			var range = LineRange.Union(leftMatchEditor.FromUnderlying(leftRange), rightMatchEditor.FromUnderlying(rightRange));
 			leftMatchEditor.MarkRange(range);
 			rightMatchEditor.MarkRange(range);
 		}
 
-		public void MarkRange(Range leftRange) {
+		public void MarkRange(LineRange leftRange) {
 			leftMatchEditor.MarkRange(leftMatchEditor.FromUnderlying(leftRange));
 		}
 
@@ -183,7 +183,7 @@ namespace PatchReviewer
 			leftMatchEditor.ScrollToMarked();
 		}
 
-		public void SetEditableRange(Range rightRange) {
+		public void SetEditableRange(LineRange rightRange) {
 			rightMatchEditor.EditableRange = rightRange;
 		}
 
@@ -204,7 +204,7 @@ namespace PatchReviewer
 		}
 
 		public Patch DiffEditableRange() {
-			Range editRange;
+			LineRange editRange;
 			try {
 				editRange = rightMatchEditor.EditableRange;
 			}
@@ -230,9 +230,9 @@ namespace PatchReviewer
 				lastNode = lastNode.Next;
 			
 			// extract matching from tree
-			var range0 = new Range {first = lineTree.IndexOf(firstNode), last = lineTree.IndexOf(lastNode)};
-			var range1 = new Range {first = leftTree.IndexOf(firstNode), last = leftTree.IndexOf(lastNode)};
-			var range2 = new Range {first = rightTree.IndexOf(firstNode), last = rightTree.IndexOf(lastNode)};
+			var range0 = new LineRange { first = lineTree.IndexOf(firstNode), last = lineTree.IndexOf(lastNode)};
+			var range1 = new LineRange { first = leftTree.IndexOf(firstNode), last = leftTree.IndexOf(lastNode)};
+			var range2 = new LineRange { first = rightTree.IndexOf(firstNode), last = rightTree.IndexOf(lastNode)};
 			var matches = MatchedLineTree.ToMatches(firstNode.To(lastNode), range1.length);
 			
 			// create patch

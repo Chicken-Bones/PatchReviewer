@@ -121,7 +121,7 @@ namespace PatchReviewer
 
 		public IReadOnlyList<string> UnderlyingLines => GetUnderlyingLines(LineTree, currentDocument.Text.GetLines());
 
-		public IReadOnlyList<string> GetLines(Range lineRange, bool underlying) {
+		public IReadOnlyList<string> GetLines(LineRange lineRange, bool underlying) {
 			var segment = GetSegment(lineRange);
 			IReadOnlyList<string> lines = currentDocument.GetText(segment.start, segment.length).GetLines();
 
@@ -152,7 +152,7 @@ namespace PatchReviewer
 				if (underlyingLines.Count != LineTree.Access(side).Count)
 					throw new ArgumentException("!underlyingChange with different line count");
 
-				Range? editRange = null;
+				LineRange? editRange = null;
 				if (editRangeMarker.Valid)
 					editRange = EditableRange;
 				
@@ -172,9 +172,9 @@ namespace PatchReviewer
 
 		public void DiscardOriginalFileMarker() => undoStack.DiscardOriginalFileMarker();
 
-		public Range FromUnderlying(Range range) => range.Map(LineTree.Access(side).CombinedIndexOf);
+		public LineRange FromUnderlying(LineRange range) => range.Map(LineTree.Access(side).CombinedIndexOf);
 
-		public void MarkRange(Range range) {
+		public void MarkRange(LineRange range) {
 			rangeMarker.LineRange = range + 1;
 		}
 
@@ -182,7 +182,7 @@ namespace PatchReviewer
 			rangeMarker.ScrollTo();
 		}
 
-		public Range EditableRange {
+		public LineRange EditableRange {
 			get {
 				var r = editRangeMarker.LineRange - 1;
 				if (r.first > 0) {
@@ -194,11 +194,11 @@ namespace PatchReviewer
 				}
 			
 				if (r.end < LineTree.Count) {
-					var node = LineTree[r.last + 1];
+					var node = LineTree[r.end];
 					if (!node.HasLine(side))
 						throw new InvalidOperationException("Edit range must be followed by an underlying line");
 
-					r.last = LineTree.Access(side).IndexOf(node) - 1;
+					r.end = LineTree.Access(side).IndexOf(node);
 				}
 				else
 					r.end = LineTree.Access(side).Count;
@@ -246,12 +246,12 @@ namespace PatchReviewer
 			currentDocument.UndoStack = undoStack;
 		}
 
-		private Range GetSegment(Range lineRange) => new Range {
+		private LineRange GetSegment(LineRange lineRange) => new LineRange {
 			start = currentDocument.GetLineByNumber(lineRange.first + 1).Offset,
 			end = currentDocument.GetLineByNumber(lineRange.last + 1).EndOffset
 		};
 
-		private Range GetLineRange(Range range) => new Range {
+		private LineRange GetLineRange(LineRange range) => new LineRange {
 			first = currentDocument.GetLineByOffset(range.start).LineNumber - 1,
 			last = currentDocument.GetLineByOffset(range.end).LineNumber - 1
 		};
@@ -274,9 +274,9 @@ namespace PatchReviewer
 			return string.Join(Environment.NewLine, nodes.Select(line => line.HasLine(side) ? lines[l++] : ""));
 		}
 
-		private void InternalReplaceLines(Range range, string text) => InternalReplace(GetSegment(range), text);
+		private void InternalReplaceLines(LineRange range, string text) => InternalReplace(GetSegment(range), text);
 
-		private void InternalReplace(Range range, string text) {
+		private void InternalReplace(LineRange range, string text) {
 			ignoreChangeEvents = true;
 			currentDocument.Replace(range.start, range.length, text, OffsetChangeMappingType.CharacterReplace);
 			ignoreChangeEvents = false;
@@ -285,13 +285,13 @@ namespace PatchReviewer
 		#region TextChange Events
 		private bool ignoreChangeEvents;
 		private bool isChanging;
-		private Range changingLines;
-		private Range changedSegment; //TextView offsets
+		private LineRange changingLines;
+		private LineRange changedSegment; //TextView offsets
 		private void TextChanging(object sender, DocumentChangeEventArgs e) {
 			if (LineTree == null || ignoreChangeEvents || !undoStack.AcceptChanges)
 				return;
 
-			var range = new Range {start = e.Offset, length = e.RemovalLength};
+			var range = new LineRange { start = e.Offset, length = e.RemovalLength};
 			var lineRange =  GetLineRange(range);
 			if (!isChanging) {
 				changingLines = lineRange;
@@ -306,17 +306,17 @@ namespace PatchReviewer
 			if (LineTree == null || ignoreChangeEvents || !undoStack.AcceptChanges)
 				return;
 			
-			var range = new Range {start = e.Offset, length = e.InsertionLength};
-			range = new Range {
+			var range = new LineRange { start = e.Offset, length = e.InsertionLength};
+			range = new LineRange {
 				start = currentDocument.GetLineByOffset(range.start).Offset,
 				end = currentDocument.GetLineByOffset(range.end).EndOffset
 			};
 			if (isChanging) {
-				changedSegment = new Range {
+				changedSegment = new LineRange {
 					start = e.GetNewOffset(changedSegment.start, AnchorMovementType.BeforeInsertion),
 					end = e.GetNewOffset(changedSegment.end, AnchorMovementType.AfterInsertion)
 				};
-				changedSegment = Range.Union(changedSegment, range);
+				changedSegment = LineRange.Union(changedSegment, range);
 			}
 			else {
 				changedSegment = range;
@@ -403,23 +403,23 @@ namespace PatchReviewer
 		private class TreeEditOperation : IUndoableOperation
 		{
 			private readonly MatchedLineEditor editor;
-			private readonly Range oldRange;
-			private readonly Range newRange;
+			private readonly LineRange oldRange;
+			private readonly LineRange newRange;
 			private readonly IReadOnlyList<MatchedLineNode> oldNodes;
 			private readonly IReadOnlyList<MatchedLineNode> newNodes;
 
 			private MatchedLineTree LineTree => editor.LineTree;
 
-			public TreeEditOperation(MatchedLineEditor editor, Range range, IReadOnlyList<MatchedLineNode> newNodes) {
+			public TreeEditOperation(MatchedLineEditor editor, LineRange range, IReadOnlyList<MatchedLineNode> newNodes) {
 				this.editor = editor;
 				this.oldRange = range;
 				this.newNodes = newNodes;
 
-				newRange = new Range {start = oldRange.start, length = newNodes.Count};
+				newRange = new LineRange { start = oldRange.start, length = newNodes.Count};
 				oldNodes = LineTree.Slice(oldRange).ToArray();
 			}
 
-			private void Apply(Range range, IReadOnlyList<MatchedLineNode> nodes) {
+			private void Apply(LineRange range, IReadOnlyList<MatchedLineNode> nodes) {
 				var first = LineTree[range.first];
 				var last = LineTree[range.last];
 				LineTree.InsertRange(last, nodes.Select(n => n.GetCopy));
@@ -494,6 +494,7 @@ namespace PatchReviewer
 						lineNumber = editor.LineTree.Access(editor.side).IndexOf(node) + 1;
 					}
 
+#pragma warning disable CS0618 // Type or member is obsolete
 					FormattedText text = new FormattedText(
 						lineNumber.ToString(CultureInfo.CurrentCulture),
 						CultureInfo.CurrentCulture,
@@ -504,7 +505,8 @@ namespace PatchReviewer
 						null,
 						TextOptions.GetTextFormattingMode(this)
 					);
-					
+#pragma warning restore CS0618 // Type or member is obsolete
+
 					double y = line.GetTextLineVisualYPosition(line.TextLines[0], VisualYPosition.TextTop);
 					drawingContext.DrawText(text, new Point(RenderSize.Width - text.Width, y - TextView.VerticalOffset));
 				}

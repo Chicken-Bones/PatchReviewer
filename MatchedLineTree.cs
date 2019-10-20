@@ -1,9 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using RedBlack;
 using DiffPatch;
 using CountAccessor = RedBlack.RedBlackCountAccesor<PatchReviewer.MatchedLineNode>;
+using System;
 
 namespace PatchReviewer
 {
@@ -15,7 +15,7 @@ namespace PatchReviewer
 		public int lineCount, leftLineCount, rightLineCount;
 
 		public bool SidesEqual { get; private set; }
-		public IList<Range> leftDiffRanges, rightDiffRanges;
+		public IList<LineRange> leftDiffRanges, rightDiffRanges;
 
 		public MatchedLineNode(bool hasLeftLine, bool hasRightLine) {
 			HasLeftLine = hasLeftLine;
@@ -73,8 +73,8 @@ namespace PatchReviewer
 				return;
 			}
 
-			leftDiffRanges = new List<Range>();
-			rightDiffRanges = new List<Range>();
+			leftDiffRanges = new List<LineRange>();
+			rightDiffRanges = new List<LineRange>();
 
 			int i1 = 0, i2 = 0;
 			int offset1 = 0, offset2 = 0;
@@ -91,12 +91,12 @@ namespace PatchReviewer
 				while (i2 < range2.end)
 					offset2 += charRep.GetWord(wmRight[i2++]).Length;
 
-				leftDiffRanges.Add(new Range { start = start1, end = offset1 });
-				rightDiffRanges.Add(new Range { start = start2, end = offset2 });
+				leftDiffRanges.Add(new LineRange { start = start1, end = offset1 });
+				rightDiffRanges.Add(new LineRange { start = start2, end = offset2 });
 			}
 		}
 
-		public IList<Range> DiffRanges(bool r) => r ? rightDiffRanges : leftDiffRanges;
+		public IList<LineRange> DiffRanges(bool r) => r ? rightDiffRanges : leftDiffRanges;
 
 		public MatchedLineNode GetCopy => new MatchedLineNode(HasLeftLine, HasRightLine) {
 			leftDiffRanges = leftDiffRanges,
@@ -160,7 +160,7 @@ namespace PatchReviewer
 		public int IndexOf(MatchedLineNode node) => CountAccessor.IndexOf(this, node, n => n.lineCount);
 		public MatchedLineNode this[int index] => CountAccessor.GetByIndex(this, index, n => n.lineCount);
 
-		public IEnumerable<MatchedLineNode> Slice(Range range) => 
+		public IEnumerable<MatchedLineNode> Slice(LineRange range) => 
 			range.length == 0 ? Enumerable.Empty<MatchedLineNode>() : 
 				this[range.first].To(this[range.last]);
 
@@ -209,8 +209,8 @@ namespace PatchReviewer
 		}
 
 		public static MatchedLineTree FromLines(IReadOnlyList<string> leftLines, IReadOnlyList<string> rightLines) {
-			var lmDiff = new LineMatchedDiffer(leftLines, rightLines) { MinMatchScore = 0 };
-			var matchedLines = new MatchedLineTree(lmDiff.Match(), rightLines.Count);
+			var lmDiff = new LineMatchedDiffer { MinMatchScore = 0 };
+			var matchedLines = new MatchedLineTree(lmDiff.Match(leftLines, rightLines), rightLines.Count);
 			matchedLines.CompareMatched(lmDiff.WordModeLines1, lmDiff.WordModeLines2, lmDiff.charRep);
 			return matchedLines;
 		}

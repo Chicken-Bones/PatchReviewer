@@ -28,7 +28,7 @@ namespace PatchReviewer
 			if (segment.EndOffset <= startAnchor.Offset || segment.Offset >= endAnchor.Offset)
 				yield break;
 
-			var range = new Range {
+			var range = new LineRange {
 				start = Math.Max(segment.Offset, startAnchor.Offset),
 				end = Math.Min(segment.EndOffset, endAnchor.Offset)
 			};

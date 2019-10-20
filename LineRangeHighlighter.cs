@@ -39,8 +39,8 @@ namespace PatchReviewer
 		public KnownLayer Layer => KnownLayer.Background;
 
 		//line coordinates are 1 indexed
-		public Range LineRange {
-			get => new Range {first = startAnchor.Line, last = endAnchor.Line};
+		public LineRange LineRange {
+			get => new LineRange {first = startAnchor.Line, last = endAnchor.Line};
 			set {
 				var doc = textView.Document;
 
