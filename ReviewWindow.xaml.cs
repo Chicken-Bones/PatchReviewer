@@ -524,6 +524,7 @@ namespace PatchReviewer
 
 			result.success = true;
 			result.mode = Patcher.Mode.EXACT;
+			result.offsetWarning = false;
 			result.appliedPatch = userPatch;
 			file.patchedLines = (userPatch != null ? filePanel.EditedLines : PatchedLinesExcludingCurrentResult).ToArray();
 			fileModified = true;
