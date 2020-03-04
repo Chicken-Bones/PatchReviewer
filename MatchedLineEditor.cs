@@ -298,8 +298,10 @@ namespace PatchReviewer
 				return;
 			}
 
-			if (!changedSegment.Contains(range))
-				throw new InvalidOperationException("Multi-range change");
+			if (!changedSegment.Contains(range)) {
+				changingLines = LineRange.Union(changingLines, lineRange);
+				//throw new InvalidOperationException("Multi-range change");
+			}
 		}
 		
 		private void TextChanged(object sender, DocumentChangeEventArgs e) {
