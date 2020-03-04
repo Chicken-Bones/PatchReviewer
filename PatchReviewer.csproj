@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp3.0;net472</TargetFrameworks>
+    <TargetFrameworks>netcoreapp3.1;net472</TargetFrameworks>
     <UseWPF>true</UseWPF>
   </PropertyGroup>
   <ItemGroup>
@@ -18,8 +18,9 @@
     <Resource Include="GrayscaleEffect.ps" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="GrayscaleEffect.fx" />
     <PackageReference Include="AvalonEdit" Version="6.0.0" />
+    <Content Include="GrayscaleEffect.fx" />
+    <PackageReference Include="System.Drawing.Common" Version="4.7.0" />
     <Resource Include="Images\Compare.png" />
     <Resource Include="Images\Reload.png" />
     <Resource Include="Images\Blank.ico" />
