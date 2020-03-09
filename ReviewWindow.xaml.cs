@@ -67,8 +67,9 @@ namespace PatchReviewer
 		private readonly List<FilePatcher> files;
 		private readonly string commonBasePath; //trim this from the start of PatchFile.basePath for cleaner names in tree view
 
+		private HashSet<FilePatcher> modifiedFiles = new HashSet<FilePatcher>();
+
 		private FilePatcher file;
-		private bool fileModified;
 		private Patcher.Result result;
 		private LineRange leftEditRange, rightEditRange;
 
@@ -302,7 +303,7 @@ namespace PatchReviewer
 
 		#region Result and Patch Functions
 
-		private bool CanSave => file != null && !CanRevert && fileModified;
+		private bool CanSave => file != null && !CanRevert && modifiedFiles.Contains(file);
 
 		private bool CanRevert => file != null && filePanel.IsModified || result != null && patchPanel.IsModified;
 
@@ -419,7 +420,7 @@ namespace PatchReviewer
 
 		private void RediffFile() {
 			Repatch(filePanel.Diff(), Patcher.Mode.OFFSET);
-			fileModified = true;
+			modifiedFiles.Add(file);
 		}
 
 		private void RediffFileEditor() {
@@ -537,8 +538,8 @@ namespace PatchReviewer
 			result.offsetWarning = false;
 			result.appliedPatch = userPatch;
 			file.patchedLines = (userPatch != null ? filePanel.EditedLines : PatchedLinesExcludingCurrentResult).ToArray();
-			fileModified = true;
-			
+			modifiedFiles.Add(file);
+
 			for (int i = file.results.IndexOf(result) + 1; i < file.results.Count; i++) {
 				var r = file.results[i];
 				if (r.appliedPatch != null)
@@ -647,7 +648,7 @@ namespace PatchReviewer
 		private void RepatchFile() {
 			var patches = file.results.Where(r => !IsRemoved(r)).Select(r => r.success ? r.appliedPatch : r.patch);
 			Repatch(patches, Patcher.Mode.OFFSET);
-			fileModified = true;
+			modifiedFiles.Add(file);
 		}
 
 		private void SaveFile()
@@ -712,7 +713,7 @@ namespace PatchReviewer
 
 		private void ReloadFile() {
 			Repatch(file.patchFile.patches, Patcher.Mode.FUZZY);
-			fileModified = false;
+			modifiedFiles.Remove(file);
 		}
 
 		#endregion
@@ -731,7 +732,7 @@ namespace PatchReviewer
 			if (file == null)
 				return;
 
-			e.CanExecute = fileModified || filePanel.IsModified;
+			e.CanExecute = modifiedFiles.Contains(file) || filePanel.IsModified;
 			SetItemModifiedStyle(FindItem(file), e.CanExecute);
 		}
 
