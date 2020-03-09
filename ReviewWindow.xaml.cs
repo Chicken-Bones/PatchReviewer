@@ -63,9 +63,9 @@ namespace PatchReviewer
 		#endregion
 
 		public bool AutoHeaders { get; set; }
-		public Func<FilePatcher, string> ItemLabeller { get; set; } = pf => pf.patchFile.basePath;
 
 		private readonly List<FilePatcher> files;
+		private readonly string commonBasePath; //trim this from the start of PatchFile.basePath for cleaner names in tree view
 
 		private FilePatcher file;
 		private bool fileModified;
@@ -77,10 +77,12 @@ namespace PatchReviewer
 
 		private TreeViewItem currentItem;
 
-		public ReviewWindow(IEnumerable<FilePatcher> files) {
+		public ReviewWindow(IEnumerable<FilePatcher> files, string commonBasePath = null) {
 			InitializeComponent();
 
-			this.files = files.OrderBy(ItemLabeller).ToList();
+			this.commonBasePath = commonBasePath;
+			this.files = files.OrderBy(GetFileLabel).ToList();
+
 			PopulateTreeView();
 			SetupEditors();
 			
@@ -109,8 +111,16 @@ namespace PatchReviewer
 				treeView.Items.Add(UpdateItem(new TreeViewItem(), f, true));
 		}
 
+		public string GetFileLabel(FilePatcher f) {
+			var label = f.patchFile.basePath;
+			if (commonBasePath != null && label.StartsWith(commonBasePath))
+				return label.Substring(commonBasePath.Length);
+
+			return label;
+		}
+
 		private TreeViewItem UpdateItem(TreeViewItem item, FilePatcher f, bool regenChildren) {
-			item.Header = ItemLabeller(f);
+			item.Header = GetFileLabel(f);
 			item.Background = StatusBrush(GetStatus(f));
 			item.Tag = f;
 			SetItemModifiedStyle(item, false);
@@ -308,11 +318,11 @@ namespace PatchReviewer
 			result = r;
 
 			if (result == null) {
-				titleLabel.Content = ItemLabeller(file);
+				titleLabel.Content = GetFileLabel(file);
 				titleLabel.Background = StatusBrush(GetStatus(file));
 			}
 			else {
-				titleLabel.Content = ItemLabeller(file) + " " + result.Summary();
+				titleLabel.Content = GetFileLabel(file) + " " + result.Summary();
 				titleLabel.Background = StatusBrush(GetStatus(result));
 			}
 
