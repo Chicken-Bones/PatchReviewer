@@ -305,7 +305,7 @@ namespace PatchReviewer
 
 		private bool CanSave => file != null && !CanRevert && modifiedFiles.Contains(file);
 
-		private bool CanRevert => file != null && filePanel.IsModified || result != null && patchPanel.IsModified;
+		private bool CanRevert => file != null && filePanel.IsModified || result != null && (patchPanel.IsModified || IsRemoved(result));
 
 		private bool CanRediff => (fileTab.IsSelected ? filePanel : patchPanel).CanReDiff || !editorsInSync;
 		
@@ -825,6 +825,9 @@ namespace PatchReviewer
 		}
 
 		private void ExecuteRevert(object sender, ExecutedRoutedEventArgs e) {
+			if (IsRemoved(result))
+				result.success = false; //convert to FAILED
+
 			ReloadPanes(file, result, true);
 		}
 
