@@ -374,6 +374,14 @@ namespace PatchReviewer
 			}
 
 			filePanel.SetEditableRange(rightEditRange);
+
+			if (result.appliedPatch != null && !(leftEditRange.Contains(result.appliedPatch.Range1) && rightEditRange.Contains(result.appliedPatch.Range2))) {
+				var choice = new CustomMessageBox {
+					Title = "Patch out of order",
+					Message = "Patch does not fit between neighbours. Either patches overlap, or have different order to original file.",
+					Image = MessageBoxImage.Error
+				}.ShowDialogOk();
+			}
 		}
 
 		private void ReloadUserPatch(bool soft = false) {
@@ -825,8 +833,10 @@ namespace PatchReviewer
 		}
 
 		private void ExecuteRevert(object sender, ExecutedRoutedEventArgs e) {
-			if (IsRemoved(result))
+			if (IsRemoved(result)) {
 				result.success = false; //convert to FAILED
+				UpdateItem(FindItem(file), file, false);
+			}
 
 			ReloadPanes(file, result, true);
 		}
