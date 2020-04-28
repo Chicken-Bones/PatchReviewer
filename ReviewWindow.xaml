@@ -5,7 +5,8 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:self="clr-namespace:PatchReviewer"
              mc:Ignorable="d" 
-             d:DesignHeight="800" d:DesignWidth="1200">
+             d:DesignHeight="800" d:DesignWidth="1200"
+             DataContext="{Binding RelativeSource={RelativeSource Self}}">
 
     <Window.Resources>
         <ResourceDictionary Source="AppStyle.xaml" />
@@ -67,11 +68,40 @@
                 <ColumnDefinition Width="5" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <TreeView Name="treeView" SelectedItemChanged="TreeView_OnSelectedItemChanged" ScrollViewer.HorizontalScrollBarVisibility="Disabled" />
-            <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" />
+            <TreeView Name="treeView" 
+                      ItemsSource="{Binding Files}" 
+                      SelectedItemChanged="TreeView_OnSelectedItemChanged" 
+                      ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <TreeView.ItemContainerStyle>
+                    <Style TargetType="TreeViewItem">
+                        <!-- <Setter Property="Margin" Value="-15, 0, 0, 0"/>-->
+                        <Setter Property="Padding" Value="0"/>
+                    </Style>
+                </TreeView.ItemContainerStyle>
+                <TreeView.Resources>
+                    <!-- Style the inactive selection the same as active -->
+                    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}"
+                                     Color="{DynamicResource {x:Static SystemColors.HighlightColorKey}}" />
+                    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}"
+                                     Color="{DynamicResource {x:Static SystemColors.HighlightTextColorKey}}"/>
+
+
+                    <HierarchicalDataTemplate DataType="{x:Type self:FilePatcherViewModel}" ItemsSource="{Binding Children}">
+                        <TextBlock Text="{Binding LabelWithModifiedIndicator}" Background="{Binding Status, Converter={StaticResource StatusBrushConverter}}"/>
+                    </HierarchicalDataTemplate>
+                    <DataTemplate DataType="{x:Type self:ResultViewModel}">
+                        <StackPanel Orientation="Horizontal" 
+                                    Background="{Binding Status, Converter={StaticResource StatusBrushConverter}}">
+                            <TextBlock Text="{Binding MovedPatchCountText}" Width="30"/>
+                            <TextBlock Text="{Binding LabelWithModifiedIndicator}"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </TreeView.Resources>
+            </TreeView>
             <DockPanel Grid.Column="2" >
-                <Label Name="titleLabel" DockPanel.Dock="Top" HorizontalContentAlignment="Center" FontFamily="Courier New" FontWeight="Bold" Background="#FFE03030" BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}" Margin="2">
-                    Title
+                <Label Name="titleLabel" DockPanel.Dock="Top" HorizontalContentAlignment="Center" FontFamily="Courier New" FontWeight="Bold" BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}" Margin="2"
+                       Content="{Binding Title}"
+                       Background="{Binding Status, Converter={StaticResource StatusBrushConverter}}">
                 </Label>
                 <TabControl x:Name="tabControl" SelectionChanged="TabControl_OnSelectionChanged" Padding="0">
                     <TabItem Header="File" x:Name="fileTab">

@@ -6,90 +6,48 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media;
 using System.Xml;
 using ICSharpCode.AvalonEdit.Document;
 using ICSharpCode.AvalonEdit.Editing;
 using ICSharpCode.AvalonEdit.Highlighting;
 using ICSharpCode.AvalonEdit.Highlighting.Xshd;
 using DiffPatch;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using System.Collections.ObjectModel;
+using System.Windows.Threading;
 
 namespace PatchReviewer
 {
-	public partial class ReviewWindow
+	public partial class ReviewWindow : INotifyPropertyChanged
 	{
-		#region Styling Properties
-
-		public static readonly DependencyProperty OffsetPatchBrushProperty = DependencyProperty.Register(
-			nameof(OffsetPatchBrush), typeof(Brush), typeof(ReviewWindow));
-
-		public Brush OffsetPatchBrush {
-			get => (Brush) GetValue(OffsetPatchBrushProperty);
-			set => SetValue(OffsetPatchBrushProperty, value);
-		}
-
-		public static readonly DependencyProperty GoodPatchBrushProperty = DependencyProperty.Register(
-			nameof(GoodPatchBrush), typeof(Brush), typeof(ReviewWindow));
-
-		public Brush GoodPatchBrush {
-			get => (Brush) GetValue(GoodPatchBrushProperty);
-			set => SetValue(GoodPatchBrushProperty, value);
-		}
-
-		public static readonly DependencyProperty WarningPatchBrushProperty = DependencyProperty.Register(
-			nameof(WarningPatchBrush), typeof(Brush), typeof(ReviewWindow));
-
-		public Brush WarningPatchBrush {
-			get => (Brush) GetValue(WarningPatchBrushProperty);
-			set => SetValue(WarningPatchBrushProperty, value);
-		}
-
-		public static readonly DependencyProperty BadPatchBrushProperty = DependencyProperty.Register(
-			nameof(BadPatchBrush), typeof(Brush), typeof(ReviewWindow));
-
-		public Brush BadPatchBrush {
-			get => (Brush) GetValue(BadPatchBrushProperty);
-			set => SetValue(BadPatchBrushProperty, value);
-		}
-
-		public static readonly DependencyProperty FailPatchBrushProperty = DependencyProperty.Register(
-			nameof(FailPatchBrush), typeof(Brush), typeof(ReviewWindow));
-
-		public Brush FailPatchBrush {
-			get => (Brush) GetValue(FailPatchBrushProperty);
-			set => SetValue(FailPatchBrushProperty, value);
-		}
-
-		#endregion
-
 		public bool AutoHeaders { get; set; }
 
-		private readonly List<FilePatcher> files;
-		private readonly string commonBasePath; //trim this from the start of PatchFile.basePath for cleaner names in tree view
+		public ObservableCollection<FilePatcherViewModel> Files { get; private set; }
 
-		private HashSet<FilePatcher> modifiedFiles = new HashSet<FilePatcher>();
+		public event PropertyChangedEventHandler PropertyChanged;
+		protected void OnPropertyChanged([CallerMemberName] string name = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
-		private FilePatcher file;
-		private Patcher.Result result;
+		private FilePatcherViewModel File;
+		private ResultViewModel Result;
+
 		private LineRange leftEditRange, rightEditRange;
 
 		private bool editorsInSync;
-		private Patch userPatch;
-
-		private TreeViewItem currentItem;
+		//private Patch userPatch;
 
 		public ReviewWindow(IEnumerable<FilePatcher> files, string commonBasePath = null) {
+			Files = new ObservableCollection<FilePatcherViewModel>(files.Select(f => new FilePatcherViewModel(f, commonBasePath)).OrderBy(f => f.Label));
+
 			InitializeComponent();
-
-			this.commonBasePath = commonBasePath;
-			this.files = files.OrderBy(GetFileLabel).ToList();
-
-			PopulateTreeView();
 			SetupEditors();
-			
-			Select((TreeViewItem) treeView.Items[0]);
-			if (NextReviewItem(1) != null)
-				Select(NextReviewItem(1));
+			Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(SelectFirstItem));
+		}
+
+		private void SelectFirstItem() {
+			Select(Files[0]);
+			if (NextReviewItem(false) is ResultViewModel r)
+				Select(r);
 		}
 
 		private void SetupEditors() {
@@ -107,12 +65,12 @@ namespace PatchReviewer
 
 		#region TreeView Items
 
-		private void PopulateTreeView() {
+		/*private void PopulateTreeView() {
 			foreach (var f in files)
 				treeView.Items.Add(UpdateItem(new TreeViewItem(), f, true));
-		}
+		}*/
 
-		public string GetFileLabel(FilePatcher f) {
+		/*public string GetFileLabel(FilePatcher f) {
 			var label = f.patchFile.basePath;
 			if (commonBasePath != null && label.StartsWith(commonBasePath))
 				return label.Substring(commonBasePath.Length);
@@ -123,6 +81,7 @@ namespace PatchReviewer
 		private TreeViewItem UpdateItem(TreeViewItem item, FilePatcher f, bool regenChildren) {
 			item.Header = GetFileLabel(f);
 			item.Background = StatusBrush(GetStatus(f));
+			//item.FontFamily = new FontFamily("Courier New");
 			item.Tag = f;
 			SetItemModifiedStyle(item, false);
 
@@ -139,108 +98,116 @@ namespace PatchReviewer
 			UpdateItem(item, r, IsRemoved(r));
 
 		private TreeViewItem UpdateItem(TreeViewItem item, Patcher.Result r, bool removed) {
-			item.Header = r.Summary();
+			var text = r.Summary();
 			if (removed)
-				item.Header = $"REMOVED: {r.patch.Header}";
+				text = $"REMOVED: {r.patch.Header}";
+
+			item.Margin = new Thickness(-15, 0, 0, 0);
+			item.Header = new StackPanel { Orientation = Orientation.Horizontal, Children = {
+					new TextBlock { Text =  , Width = 30 },
+					new TextBlock { Text = text },
+				}
+			};
 
 			item.Background = StatusBrush(GetStatus(r));
+			//item.FontFamily = new FontFamily("Courier New");
 			item.Tag = r;
 			SetItemModifiedStyle(item, false);
 
 			return item;
-		}
+		}*/
 
-		private static void SetItemModifiedStyle(TreeViewItem item, bool modified) {
+		/*private static void SetItemModifiedStyle(TreeViewItem item, bool modified) {
 			item.FontWeight = modified ? FontWeights.Bold : FontWeights.Normal;
-			var title = ((string) item.Header).TrimEnd(' ', '*');
-			if (modified)
-				title += " *";
-			item.Header = title;
-		}
 
-		private Brush StatusBrush(ResultStatus status) {
-			switch (status) {
-				case ResultStatus.EXACT:
-					return Brushes.Transparent;
-				case ResultStatus.OFFSET:
-					return OffsetPatchBrush;
-				case ResultStatus.GOOD:
-					return GoodPatchBrush;
-				case ResultStatus.WARNING:
-					return WarningPatchBrush;
-				case ResultStatus.BAD:
-					return BadPatchBrush;
-				case ResultStatus.FAILED:
-					return FailPatchBrush;
-				default:
-					throw new ArgumentException("ResultStatus: " + status);
+			// ugly hacks, relly should have bindings and MMVM, but lack time right now
+			if (item.Tag is FilePatcher) {
+				var title = ((string)item.Header).TrimEnd(' ', '*');
+				if (modified)
+					title += " *";
+				item.Header = title;
 			}
-		}
+			else {
+				var endTextBox = ((StackPanel)item.Header).Children.OfType<TextBlock>().Last();
+				var title = endTextBox.Text.TrimEnd(' ', '*');
+				if (modified)
+					title += " *";
+				endTextBox.Text = title;
+			}
+		}*/
 
-		//this is a mess
-		private static T WalkTree<T>(T item, int dir, bool drill = true) where T : ItemsControl {
-			if (drill && dir > 0 && item.Items.Count > 0 && item.Items[0] is T child)
-				return child;
 
-			if (!(item.Parent is ItemsControl parent))
+		private ResultViewModel NextReviewItem(bool backwards) {
+			if (treeView?.SelectedItem == null)
 				return null;
 
-			int i = parent.Items.IndexOf(item) + dir;
-			if (i < 0 || i >= parent.Items.Count) { //go up a level
-				if (!(parent is T))
+			// not the fastest way to implement this, but one of the easiest
+			var results = Files.SelectMany(f => f.Results).ToList();
+			if (backwards)
+				results.Reverse();
+
+			int i;
+			if (treeView.SelectedItem is ResultViewModel selectedResult) {
+				i = results.IndexOf(selectedResult) + 1;
+			}
+			else if (treeView.SelectedItem is FilePatcherViewModel selectedFile) {
+				// last result of prev file / next result of current file
+				var r = backwards ? 
+					Files.Take(Files.IndexOf(selectedFile)).LastOrDefault(f => f.Results.Any())?.Results.Last() :
+					Files.Skip(Files.IndexOf(selectedFile)).FirstOrDefault(f => f.Results.Any())?.Results.First();
+
+				if (r == null)
 					return null;
 
-				var next = WalkTree((T) parent, dir, false);
-				if (drill && dir < 0 && next != null)
-					while (next.Items.Count > 0 && next.Items[next.Items.Count - 1] is T t)
-						next = t;
-
-				return next;
+				i = results.IndexOf(r);
+			}
+			else {
+				throw new Exception("SelectedItem of unknown type");
 			}
 
-			return (T) parent.Items[i];
+			return results.Skip(i).FirstOrDefault(r => r.Status < ResultStatus.OFFSET);
 		}
 
-		private TreeViewItem FindItem(FilePatcher file, Patcher.Result result = null) {
-			var item = treeView.Items.Cast<TreeViewItem>().Single(t => t.Tag == file);
-			if (result != null)
-				item = item.Items.Cast<TreeViewItem>().Single(t => t.Tag == result);
+		private void Select(FilePatcherViewModel f) => SelectItem(f);
+		private void Select(ResultViewModel r) => SelectItem(r.File, r);
 
-			return item;
-		}
+		private void SelectItem(params object[] heirachy) {
+			var ic = (ItemsControl)treeView;
+			foreach (var item in heirachy) {
+				ic = (ItemsControl)ic.ItemContainerGenerator.ContainerFromItem(item);
+				if (ic is TreeViewItem tvItem) {
+					tvItem.IsExpanded = true;
+					tvItem.BringIntoView();
+				}
+				if (ic == null) {
+					Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() => SelectItem(heirachy)));
+					return;
+				}
+			}
 
-		private TreeViewItem NextReviewItem(int dir) {
-			if (currentItem == null)
-				return null;
-
-			var node = currentItem;
-			do {
-				node = WalkTree(node, dir);
-			} while (node != null && (!(node.Tag is Patcher.Result r) || GetStatus(r) >= ResultStatus.OFFSET));
-
-			return node;
-		}
-
-		private static void Select(TreeViewItem item) {
-			var n = item;
-			while (n.Parent is TreeViewItem parent)
-				(n = parent).IsExpanded = true;
-
-			item.IsSelected = true;
-			item.BringIntoView();
+			((TreeViewItem)ic).IsSelected = true;
 		}
 
 		#endregion
 
 		private void SelectTab(TabItem tabItem) => Dispatcher.BeginInvoke(new Action(() => tabItem.IsSelected = true));
 
+		private object _selectedTreeViewItem;
 		private void TreeView_OnSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e) {
-			if (e.NewValue == currentItem)
+			if (e.NewValue == _selectedTreeViewItem)
 				return;
 
-			if (e.OldValue == currentItem && CanRevert) {
+			if (e.OldValue != _selectedTreeViewItem)
+				throw new Exception($"{nameof(_selectedTreeViewItem)} desync");
+
+			if (ItemHasUserChanges) {
 				if (ApproveOnExit() == MessageBoxResult.Cancel) {
-					Dispatcher.BeginInvoke(new Action(() => Select(currentItem)));
+					Dispatcher.BeginInvoke(new Action(() => {
+						if (e.OldValue is FilePatcherViewModel)
+							Select((FilePatcherViewModel)e.OldValue);
+						else
+							Select((ResultViewModel)e.OldValue);
+					}));
 					return;
 				}
 
@@ -249,11 +216,14 @@ namespace PatchReviewer
 					return;
 			}
 
-			currentItem = (TreeViewItem) e.NewValue;
-			if (currentItem.Tag is FilePatcher patchedFile)
-				ReloadPanes(patchedFile, null);
+			if (Result != null)
+				Result.EditingPatch = null;
+
+			_selectedTreeViewItem = e.NewValue;
+			if (_selectedTreeViewItem is FilePatcherViewModel file)
+				OnItemSelected(file);
 			else
-				ReloadPanes((FilePatcher) ((TreeViewItem) currentItem.Parent).Tag, (Patcher.Result) currentItem.Tag);
+				OnItemSelected((ResultViewModel)_selectedTreeViewItem);
 		}
 
 		private void TabControl_OnSelectionChanged(object sender, SelectionChangedEventArgs e) {
@@ -265,117 +235,94 @@ namespace PatchReviewer
 			else if (e.RemovedItems[0] == patchTab && patchPanel.CanReDiff)
 				RediffPatchEditor();
 		}
-
-		#region Result Status
 		
-		private enum ResultStatus
-		{
-			FAILED,
-			BAD,
-			WARNING,
-			GOOD,
-			OFFSET,
-			EXACT,
-		}
-
-		private static ResultStatus GetStatus(Patcher.Result r) {
-			if (!r.success)
-				return ResultStatus.FAILED;
-			if (r.mode == Patcher.Mode.FUZZY && r.fuzzyQuality < 0.5f)
-				return ResultStatus.BAD;
-			if (r.offsetWarning || r.mode == Patcher.Mode.FUZZY && r.fuzzyQuality < 0.85f)
-				return ResultStatus.WARNING;
-			if (r.mode == Patcher.Mode.FUZZY)
-				return ResultStatus.GOOD;
-			if (r.mode == Patcher.Mode.OFFSET)
-				return ResultStatus.OFFSET;
-			return ResultStatus.EXACT;
-		}
-
-		private static ResultStatus GetStatus(FilePatcher f) =>
-			f.results.Count == 0 ? ResultStatus.EXACT :
-			f.results.Select(GetStatus).Min();
-
-		private static bool IsRemoved(Patcher.Result r) =>
-			r.success && r.appliedPatch == null;
-
-		#endregion
-
 		#region Result and Patch Functions
 
-		private bool CanSave => file != null && !CanRevert && modifiedFiles.Contains(file);
+		// can save as long as 
+		private bool CanSave => (File?.IsModified ?? false) && !ItemHasUserChanges;
 
-		private bool CanRevert => file != null && filePanel.IsModified || result != null && (patchPanel.IsModified || IsRemoved(result));
+		private bool ItemHasUserChanges => Result?.ModifiedInEditor ?? File?.ModifiedInEditor ?? false;
+		private bool CanRevert => ItemHasUserChanges || (Result?.IsRemoved ?? false);
 
 		private bool CanRediff => (fileTab.IsSelected ? filePanel : patchPanel).CanReDiff || !editorsInSync;
-		
-		private bool UserPatchRemoved => result != null && result.success && userPatch == null;
 
-		private static bool ResultsAreValuable(FilePatcher f) => GetStatus(f) < ResultStatus.OFFSET;
+		private void OnItemSelected(FilePatcherViewModel f) => ReloadPanes(f, null, false);
+		private void OnItemSelected(ResultViewModel r) => ReloadPanes(r.File, r, false);
 
-		private void ReloadPanes(FilePatcher f, Patcher.Result r, bool force = false) {
-			bool newFile = file != f;
-			file = f;
-			result = r;
-
-			if (result == null) {
-				titleLabel.Content = GetFileLabel(file);
-				titleLabel.Background = StatusBrush(GetStatus(file));
-			}
-			else {
-				titleLabel.Content = GetFileLabel(file) + " " + result.Summary();
-				titleLabel.Background = StatusBrush(GetStatus(result));
+		private void ReloadPanes(FilePatcherViewModel f, ResultViewModel r, bool linesChanged) {
+			bool newFile = File != f;
+			if (newFile) {
+				if (File != null)
+					File.PropertyChanged -= TrackPatchedLineChanges;
+				if (f != null)
+					f.PropertyChanged += TrackPatchedLineChanges;
 			}
 
-			if (newFile || force) {
-				filePanel.LoadDiff(file.baseLines, file.patchedLines);
+			if (Result != r && Result?.EditingPatch != null)
+				throw new Exception("Leftover editing patch in result");
+
+			File = f;
+			Result = r;
+
+			if (newFile || linesChanged) {
+				filePanel.LoadDiff(File.BaseLines, File.PatchedLines);
 				filePanel.SyntaxHighlighting =
-					HighlightingManager.Instance.GetDefinitionByExtension(Path.GetExtension(file.patchFile.basePath));
+					HighlightingManager.Instance.GetDefinitionByExtension(Path.GetExtension(File.BasePath));
 			}
 
-			if (result == null) {
+			if (Result == null) {
+				titleLabel.DataContext = File;
+				patchTab.Visibility = Visibility.Hidden;
+
 				filePanel.ClearRangeMarkers();
 				AddEditWarning();
 				SelectTab(fileTab);
-				patchTab.Visibility = Visibility.Hidden;
-				return;
 			}
+			else {
+				titleLabel.DataContext = Result;
+				patchTab.Visibility = Visibility.Visible;
 
-			patchTab.Visibility = Visibility.Visible;
+				Result.ModifiedInEditor = false;
+				Result.EditingPatch = Result.AppliedPatch;
+				ReloadEditingPatch();
+				ReCalculateEditRange();
+				filePanel.ScrollToMarked();
+			}
+		}
 
-			userPatch = result.appliedPatch;
-			ReloadUserPatch();
-			ReCalculateEditRange();
-			filePanel.ScrollToMarked();
+		private void TrackPatchedLineChanges(object sender, PropertyChangedEventArgs e) {
+			if (e.PropertyName == nameof(File.PatchedLines))
+				ReloadPanes(File, Result, true);
 		}
 
 		private void AddEditWarning() {
-			if (ResultsAreValuable(file)) {
+			if (File.ResultsAreValuable) {
 				var textArea = filePanel.right.editor.TextArea;
 				textArea.ReadOnlySectionProvider = new EditWarningReadOnlySectionProvider(textArea);
 			}
 		}
 
 		private void ReCalculateEditRange() {
-			leftEditRange = new LineRange { start = 0, end = file.baseLines.Length};
-			rightEditRange = new LineRange { start = 0, end = file.patchedLines.Length};
+			leftEditRange = new LineRange { start = 0, end = File.BaseLines.Length};
+			rightEditRange = new LineRange { start = 0, end = File.PatchedLines.Length};
 
-			int i = file.results.IndexOf(result);
-			var prev = file.results.Take(i).LastOrDefault(r => r.appliedPatch != null);
+			int i = File.Results.ToList().IndexOf(Result);
+			var prev = File.Results.Take(i).LastOrDefault(r => r.AppliedPatch != null);
 			if (prev != null) {
-				leftEditRange.start = prev.appliedPatch.start1 + prev.appliedPatch.length1;
-				rightEditRange.start = prev.appliedPatch.start2 + prev.appliedPatch.length2;
+				leftEditRange.start = prev.End1;
+				rightEditRange.start = prev.End2;
 			}
 
-			var next = file.results.Skip(i + 1).FirstOrDefault(r => r.appliedPatch != null);
+			var next = File.Results.Skip(i + 1).FirstOrDefault(r => r.AppliedPatch != null);
 			if (next != null) {
-				leftEditRange.end = next.appliedPatch.start1;
-				rightEditRange.end = next.appliedPatch.start2;
+				leftEditRange.end = next.Start1;
+				rightEditRange.end = next.Start2;
 			}
 
 			filePanel.SetEditableRange(rightEditRange);
 
-			if (result.appliedPatch != null && !(leftEditRange.Contains(result.appliedPatch.Range1) && rightEditRange.Contains(result.appliedPatch.Range2))) {
+			var viewPatch = Result.ViewPatch;
+			if (viewPatch != null && !(leftEditRange.Contains(viewPatch.Range1) && rightEditRange.Contains(viewPatch.Range2))) {
 				var choice = new CustomMessageBox {
 					Title = "Patch out of order",
 					Message = "Patch does not fit between neighbours. Either patches overlap, or have different order to original file.",
@@ -384,78 +331,64 @@ namespace PatchReviewer
 			}
 		}
 
-		private void ReloadUserPatch(bool soft = false) {
+		private void ReloadEditingPatch(bool soft = false) {
 			//mark patch ranges
-			if (userPatch != null)
+			var p = Result.EditingPatch;
+			if (p != null)
 				filePanel.MarkRange(
-					new LineRange { start = userPatch.start1, length = userPatch.length1},
-					new LineRange { start = userPatch.start2, length = userPatch.length2});
-			else if (result.patch.start1 + result.patch.length1 <= file.baseLines.Length)
+					new LineRange { start = p.start1, length = p.length1},
+					new LineRange { start = p.start2, length = p.length2});
+			else if (Result.End1 <= File.BaseLines.Length) // mark the patch we were working on in the left hand side
 				filePanel.MarkRange(
-					new LineRange { start = result.patch.start1, length = result.patch.length1});
+					new LineRange { start = Result.Start1, end = Result.End1 });
 			else
 				filePanel.ClearRangeMarkers();
 
-			var editPatch = userPatch;
-			if (editPatch == null) { //removed or failed
-				editPatch = new Patch(result.patch);
-				editPatch.start2 += result.searchOffset;
+			if (p == null) { //removed or failed, show the original patch in the patch panel
+				p = new Patch(Result.OriginalPatch);
+				p.start2 += Result.SearchOffset;
 			}
 
 			if (soft)
-				patchPanel.ReplaceEditedLines(editPatch.ToString().GetLines());
+				patchPanel.ReplaceEditedLines(p.ToString().GetLines());
 			else
 				patchPanel.LoadDiff(
-					result.patch.ToString().GetLines(),
-					editPatch.ToString().GetLines());
+					Result.OriginalPatch.ToString().GetLines(),
+					p.ToString().GetLines());
 
-			string patchEffect = !result.success ? "Failed" : userPatch == null ? "Removed" : "Applied";
+			//TODO bind this
+			string patchEffect = Result.IsRemoved ? "Removed" : Result.Status == ResultStatus.FAILED ? "Failed" : "Applied";
 			patchPanel.right.Title = patchEffect + " Patch";
-			UpdateItem(FindItem(file, result), result, UserPatchRemoved);
 
 			editorsInSync = true;
 		}
 
-		private void Repatch(IEnumerable<Patch> patches, Patcher.Mode mode) {
-			var patcher = new Patcher(patches, file.baseLines);
-			patcher.Patch(mode);
-			file.results = patcher.Results.ToList();
-			file.patchedLines = patcher.ResultLines;
-
-			UpdateItem(FindItem(file), file, true);
-			ReloadPanes(file, null, true);
-		}
-
 		private void RediffFile() {
-			Repatch(filePanel.Diff(), Patcher.Mode.OFFSET);
-			modifiedFiles.Add(file);
+			File.Repatch(filePanel.Diff(), Patcher.Mode.OFFSET);
+			// triggers ReloadPanes
 		}
 
 		private void RediffFileEditor() {
 			filePanel.ReDiff();
-			if (result == null)
+			if (Result == null)
 				return;
 
 			//recalculate user patch
 			try {
-				userPatch = filePanel.DiffEditableRange();
+				Result.EditingPatch = filePanel.DiffEditableRange();
 			}
 			catch (InvalidOperationException e) {
 				MessageBox.Show(this, e.Message, "Rediff Failed", MessageBoxButton.OK, MessageBoxImage.Error);
 				return;
 			}
 
-			//Can't remember what this was for, but it currently ruins the range marking
-			/*if (userPatch != null)
-				userPatch.start1 -= result.searchOffset;*/
-
-			ReloadUserPatch();
+			ReloadEditingPatch();
 		}
 
 		private IEnumerable<string> PatchedLinesExcludingCurrentResult =>
-			file.patchedLines.Slice(new LineRange { start = 0, end = rightEditRange.start})
-				.Concat(file.baseLines.Slice(leftEditRange))
-				.Concat(file.patchedLines.Slice(new LineRange { start = rightEditRange.end, end = file.patchedLines.Length}));
+			File.PatchedLines.Slice(new LineRange { start = 0, end = rightEditRange.start})
+				.Concat(File.BaseLines.Slice(leftEditRange))
+				.Concat(File.PatchedLines.Slice(new LineRange { start = rightEditRange.end, end = File.PatchedLines.Length}));
 
 		private void RediffPatchEditor() {
 			patchPanel.ReDiff();
@@ -479,38 +412,62 @@ namespace PatchReviewer
 				return;
 			}
 
-			var trimmed = new Patch(r.appliedPatch);
-			trimmed.Trim(0);
-			if (r.mode == Patcher.Mode.FUZZY) {
-				var choice = new CustomMessageBox {
-					Title = "Fuzzy Patch",
-					Message = $"Fuzzy patch mode was required to make the patch succeed. " +
-					          $"Load assisted patch? (Quality {(int) (r.fuzzyQuality * 100)})",
-					Image = MessageBoxImage.Question
-				}.ShowDialogOkCancel("Load", "Undo");
-				if (choice == MessageBoxResult.Cancel)
-					return;
+			p = r.appliedPatch;
+			var appliedRange = p.TrimmedRange1;
+			// calculate Result.AppliedPatch.Range2 to match PatchedLinesExcludingCurrentResult
+			var keepoutRanges = new List<LineRange>();
+			int delta = 0;
+			foreach (var _result in File.Results) {
+				if (_result == Result || !(_result.AppliedPatch is Patch applied))
+					continue;
+
+				var range = new LineRange { start = applied.start1 + delta, length = applied.length2 };
+				keepoutRanges.Add(range);
+
+				delta += applied.length2 - applied.length1;
+
+				if (range.end <= appliedRange.start)
+					p.start1 -= applied.length2 - applied.length1;
 			}
 
-			if (!new LineRange { start = rightEditRange.start, length = leftEditRange.length}.Contains(trimmed.Range1)) {
+			if (keepoutRanges.Any(range => range.Contains(appliedRange))) {
 				new CustomMessageBox {
 					Title = "Patch Failed",
-					Message = $"Patch applied ({r.mode}) with modifications {trimmed.Range1} outside the editable range {leftEditRange}",
+					Message = $"Patch applied ({r.mode}) inside another patch {appliedRange}",
 					Image = MessageBoxImage.Error
 				}.ShowDialogOk("Ignore");
 				
 				return;
 			}
 
-			editorsInSync = true;
-			userPatch = r.appliedPatch;
-			userPatch.start1 -= rightEditRange.start - leftEditRange.start;
-			
-			filePanel.LoadDiff(file.baseLines, patcher.ResultLines, true, false);
-			filePanel.SetEditableRange(new LineRange { start = rightEditRange.start, 
-				length = leftEditRange.length + userPatch.length2 - userPatch.length1});
+			CustomMessageBox msgBox = null;
+			if (!new LineRange { start = rightEditRange.start, length = leftEditRange.length}.Contains(appliedRange)) {
+				msgBox = new CustomMessageBox {
+					Title = "Moved Patch",
+					Message = "Patch has been moved.\nLoad assisted patch?",
+					Image = MessageBoxImage.Question
+				};
+			}
+			if (r.mode == Patcher.Mode.FUZZY) {
+				if (msgBox == null) {
+					msgBox = new CustomMessageBox {
+						Title = "Fuzzy Patch",
+						Message = "Fuzzy patch mode was required to make the patch succeed.\nLoad assisted patch?",
+						Image = MessageBoxImage.Question
+					};
+				}
+				msgBox.Message += $" (Quality { (int)(r.fuzzyQuality * 100)})";
+			}
 
-			ReloadUserPatch(r.mode != Patcher.Mode.FUZZY);
+			if (msgBox != null && msgBox.ShowDialogOkCancel("Load", "Undo") == MessageBoxResult.Cancel)
+				return;
+
+			Result.EditingPatch = p;
+			
+			filePanel.LoadDiff(File.BaseLines, patcher.ResultLines, true, false);
+			ReloadEditingPatch(r.mode != Patcher.Mode.FUZZY);
+			ReCalculateEditRange();
+			filePanel.ScrollToMarked();
 		}
 
 		private MessageBoxResult ApproveUserPatch(bool remove = false) {
@@ -524,9 +481,12 @@ namespace PatchReviewer
 			}
 
 			if (remove) {
-				userPatch = null;
+				Result.EditingPatch = null;
 			}
-			else if (userPatch == null) {
+			else if (Result.EditingPatch == null) {
+				if (!Enumerable.SequenceEqual(filePanel.EditedLines, PatchedLinesExcludingCurrentResult))
+					throw new Exception("Inconsistent state");
+
 				var choice = new CustomMessageBox {
 					Title = "Remove Empty Patch?",
 					Message = "The approved patch is empty. Remove it?",
@@ -537,28 +497,13 @@ namespace PatchReviewer
 					return MessageBoxResult.Cancel;
 			}
 
-			int prevDelta = (result.appliedPatch?.length2 - result.appliedPatch?.length1) ?? 0;
-			int newDelta = (userPatch?.length2 - userPatch?.length1) ?? 0;
-			int delta = newDelta - prevDelta;
+			Result.Approve();
 
-			result.success = true;
-			result.mode = Patcher.Mode.EXACT;
-			result.offsetWarning = false;
-			result.appliedPatch = userPatch;
-			file.patchedLines = (userPatch != null ? filePanel.EditedLines : PatchedLinesExcludingCurrentResult).ToArray();
-			modifiedFiles.Add(file);
 
-			for (int i = file.results.IndexOf(result) + 1; i < file.results.Count; i++) {
-				var r = file.results[i];
-				if (r.appliedPatch != null)
-					r.appliedPatch.start2 += delta;
-				//TODO maybe searchoffset
-			}
+			// triggers reload of panes
+			File.PatchedLines = (Result.EditingPatch != null ? filePanel.EditedLines : PatchedLinesExcludingCurrentResult).ToArray();
 
-			UpdateItem(FindItem(file), file, false);
-			ReloadPanes(file, result, true);
-
-			if (CanSave && !ResultsAreValuable(file)) {
+			if (CanSave && !File.ResultsAreValuable) {
 				var save = new CustomMessageBox {
 					Title = "Save?",
 					Message = "All items requiring user review have been approved. Save patch and results?",
@@ -597,7 +542,7 @@ namespace PatchReviewer
 			MessageBoxResult choice;
 			Action yesAction;
 
-			if (result == null) {
+			if (Result == null) {
 				choice = new CustomMessageBox {
 					Title = "Unapplied Changes",
 					Message = "Rediff file to convert edits to patches?",
@@ -606,43 +551,41 @@ namespace PatchReviewer
 
 				yesAction = RediffFile;
 			}
-			else {
-				if (CanRediff) {
-					choice = new CustomMessageBox {
-						Title = "Unapproved Changes",
-						Message = "Modifications would be lost. Rediff and approve?",
-						Image = MessageBoxImage.Question
-					}.ShowDialogYesNoCancel("Rediff", "Revert");
+			else if (CanRediff) {
+				choice = new CustomMessageBox {
+					Title = "Unapproved Changes",
+					Message = "Modifications would be lost. Rediff and approve?",
+					Image = MessageBoxImage.Question
+				}.ShowDialogYesNoCancel("Rediff", "Revert");
 					
-					if (choice == MessageBoxResult.Cancel)
-						return MessageBoxResult.Cancel;
+				if (choice == MessageBoxResult.Cancel)
+					return MessageBoxResult.Cancel;
 
-					if (choice == MessageBoxResult.Yes) {
-						ExecuteRediff(null, null);
-						if (CanRediff)//failed to sync
-							return MessageBoxResult.Cancel;
-					}
-					
-					yesAction = () => ApproveUserPatch();
+				if (choice == MessageBoxResult.Yes) {
+					ExecuteRediff(null, null);
+					if (CanRediff)//failed to sync
+						return MessageBoxResult.Cancel;
 				}
-				else if (userPatch == null) {
-					choice = new CustomMessageBox {
-						Title = "Unapproved Changes",
-						Message = "Remove patch?",
-						Image = MessageBoxImage.Question
-					}.ShowDialogYesNoCancel("Remove", "Revert");
 					
-					yesAction = () => ApproveUserPatch(true);
-				}
-				else {
-					choice = new CustomMessageBox {
-						Title = "Unapproved Changes",
-						Message = "Approve changes to patch?",
-						Image = MessageBoxImage.Question
-					}.ShowDialogYesNoCancel("Approve", "Revert");
+				yesAction = () => ApproveUserPatch();
+			}
+			else if (Result.EditingPatch == null) {
+				choice = new CustomMessageBox {
+					Title = "Unapproved Changes",
+					Message = "Remove patch?",
+					Image = MessageBoxImage.Question
+				}.ShowDialogYesNoCancel("Remove", "Revert");
 					
-					yesAction = () => ApproveUserPatch();
-				}
+				yesAction = () => ApproveUserPatch(true);
+			}
+			else {
+				choice = new CustomMessageBox {
+					Title = "Unapproved Changes",
+					Message = "Approve changes to patch?",
+					Image = MessageBoxImage.Question
+				}.ShowDialogYesNoCancel("Approve", "Revert");
+					
+				yesAction = () => ApproveUserPatch();
 			}
 
 			if (choice == MessageBoxResult.Yes)
@@ -653,16 +596,16 @@ namespace PatchReviewer
 			return choice;
 		}
 
-		private void RepatchFile() {
-			var patches = file.results.Where(r => !IsRemoved(r)).Select(r => r.success ? r.appliedPatch : r.patch);
+		// Feature disabled
+		/*private void RepatchFile() {
+			var patches = File.results.Where(r => !IsRemoved(r)).Select(r => r.success ? r.appliedPatch : r.patch);
 			Repatch(patches, Patcher.Mode.OFFSET);
-			modifiedFiles.Add(file);
-		}
+			modifiedFiles.Add(File);
+		}*/
 
 		private void SaveFile()
 		{
-			bool onlySavePatches = ResultsAreValuable(file);
-			if (onlySavePatches) {
+			if (File.ResultsAreValuable) {
 				var choice = new CustomMessageBox {
 					Title = "Unapproved patches",
 					Message = "Any failed or fuzzy patches will be saved in their original state. Only the patch file will be saved",
@@ -671,57 +614,27 @@ namespace PatchReviewer
 
 				if (choice == MessageBoxResult.Cancel)
 					return;
-				
-				file.patchFile.patches = file.results
-					.Where(r => !IsRemoved(r))
-					.Select(r => r.success && r.mode != Patcher.Mode.FUZZY ? r.appliedPatch : r.patch)
-					.ToList();
-				
-				//recalculate offsets
-				int delta = 0;
-				foreach (var p in file.patchFile.patches)
-				{
-					p.start2 = p.start1 + delta;
-					delta += p.length2 - p.length1;
-				}
-			}
-			else
-			{
-				RepatchFile();
-				if (ResultsAreValuable(file)) {
-					new CustomMessageBox {
-						Title = "Save Failed",
-						Message = "Some patches did not apply perfectly. Cannot save in this state.",
-						Image = MessageBoxImage.Error
-					}.ShowDialogOk();
-					return;
-				}
-
-				file.patchFile.patches = file.results.Select(r => r.appliedPatch).ToList();
 			}
 
-			if (file.patchFile.patches.Count == 0) {
+			bool resultsWereValuable = File.ResultsAreValuable;
+			File.SaveApprovedPatches(AutoHeaders);
+
+			if (!File.Results.Any()) {
 				new CustomMessageBox {
 					Title = "Patch File Deleted",
 					Message = "Patch file was deleted as all patches were removed.",
 					Image = MessageBoxImage.Information
 				}.ShowDialogOk();
-
-				File.Delete(file.patchFilePath);
-			}
-			else {
-				File.WriteAllText(file.patchFilePath, file.patchFile.ToString(AutoHeaders));
 			}
 
-			ReloadFile();
-
-			if (!onlySavePatches)
-				file.Save();
-		}
-
-		private void ReloadFile() {
-			Repatch(file.patchFile.patches, Patcher.Mode.FUZZY);
-			modifiedFiles.Remove(file);
+			if (!resultsWereValuable && File.ResultsAreValuable) {
+				new CustomMessageBox {
+					Title = "Save Failed",
+					Message = "Some patches did not reapply properly after saving.",
+					Image = MessageBoxImage.Warning
+				}.ShowDialogOk();
+				return;
+			}
 		}
 
 		#endregion
@@ -737,11 +650,13 @@ namespace PatchReviewer
 		}
 
 		private void CanExecuteReloadFile(object sender, CanExecuteRoutedEventArgs e) {
-			if (file == null)
+			if (File == null)
 				return;
 
-			e.CanExecute = modifiedFiles.Contains(file) || filePanel.IsModified;
-			SetItemModifiedStyle(FindItem(file), e.CanExecute);
+			//TODO: actually property change bind to the text editor
+			File.ModifiedInEditor = filePanel.IsModified && Result == null;
+
+			e.CanExecute = File.IsModified;
 		}
 
 		private void ExecuteReloadFile(object sender, ExecutedRoutedEventArgs e) {
@@ -753,23 +668,25 @@ namespace PatchReviewer
 			if (choice == MessageBoxResult.Cancel)
 				return;
 
-			ReloadFile();
+			Result = null;
+			File.Repatch(); // triggers ReloadPanes
+			Select(File);
 		}
 
 		private void CanExecuteNextReviewItem(object sender, CanExecuteRoutedEventArgs e) {
-			e.CanExecute = NextReviewItem(1) != null;
+			e.CanExecute = NextReviewItem(false) != null;
 		}
 
 		private void ExecuteNextReviewItem(object sender, ExecutedRoutedEventArgs e) {
-			Select(NextReviewItem(1));
+			Select(NextReviewItem(false));
 		}
 
 		private void CanExecutePrevReviewItem(object sender, CanExecuteRoutedEventArgs e) {
-			e.CanExecute = NextReviewItem(-1) != null;
+			e.CanExecute = NextReviewItem(true) != null;
 		}
 
 		private void ExecutePrevReviewItem(object sender, ExecutedRoutedEventArgs e) {
-			Select(NextReviewItem(-1));
+			Select(NextReviewItem(true));
 		}
 
 		private void CanExecuteRediffFile(object sender, CanExecuteRoutedEventArgs e) {
@@ -777,7 +694,7 @@ namespace PatchReviewer
 		}
 
 		private void ExecuteRediffFile(object sender, ExecutedRoutedEventArgs e) {
-			if (ResultsAreValuable(file)) {
+			if (File.ResultsAreValuable) {
 				var choice = new CustomMessageBox {
 					Title = "Unapproved Patch Results",
 					Message = "This file still has unapproved patch results. " +
@@ -797,7 +714,12 @@ namespace PatchReviewer
 		}
 
 		private void ExecuteRepatchFile(object sender, ExecutedRoutedEventArgs e) {
-			if (ResultsAreValuable(file)) {
+			new CustomMessageBox {
+				Title = "Feature Disabled",
+				Message = "Feature is probably redundant. Consider saving instead."
+			}.ShowDialogOk("Cancel");
+
+			/*if (FilePatcherViewModel.ResultsAreValuable) {
 				var choice = new CustomMessageBox {
 					Title = "Unapproved Patch Results",
 					Message = "Are you sure you want to approve all patch results and repatch the file?"
@@ -807,7 +729,7 @@ namespace PatchReviewer
 					return;
 			}
 
-			RepatchFile();
+			RepatchFile();*/
 		}
 
 		private void CanExecuteRediff(object sender, CanExecuteRoutedEventArgs e) {
@@ -828,25 +750,22 @@ namespace PatchReviewer
 			if (fileTab == null)
 				return;
 
+			//TODO: actually property change bind to the text editor
+			if (Result != null)
+				Result.ModifiedInEditor |= filePanel.IsModified || patchPanel.IsModified;
+
 			e.CanExecute = CanRevert;
-			SetItemModifiedStyle(FindItem(file, result), CanRevert);
 		}
 
 		private void ExecuteRevert(object sender, ExecutedRoutedEventArgs e) {
-			if (IsRemoved(result)) {
-				result.success = false; //convert to FAILED
-				UpdateItem(FindItem(file), file, false);
-			}
+			if (Result?.IsRemoved ?? false)
+				Result.UndoRemove();
 
-			ReloadPanes(file, result, true);
+			ReloadPanes(File, Result, true);
 		}
 
 		private void CanExecuteApprove(object sender, CanExecuteRoutedEventArgs e) {
-			if (result == null)
-				return;
-			
-
-			e.CanExecute = !CanRediff && (CanRevert || result.mode != Patcher.Mode.EXACT);
+			e.CanExecute = Result != null && !CanRediff && (Result.Status != ResultStatus.EXACT || Result.ModifiedInEditor);
 		}
 
 		private void ExecuteApprove(object sender, ExecutedRoutedEventArgs e) {
@@ -857,7 +776,7 @@ namespace PatchReviewer
 		}
 
 		private void CanExecuteRemove(object sender, CanExecuteRoutedEventArgs e) {
-			e.CanExecute = result != null && !IsRemoved(result);
+			e.CanExecute = Result != null && !Result.IsRemoved;
 		}
 
 		private void ExecuteRemove(object sender, ExecutedRoutedEventArgs e) {

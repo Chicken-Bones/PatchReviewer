@@ -177,6 +177,7 @@ namespace PatchReviewer
 
 		public void MarkRange(LineRange leftRange) {
 			leftMatchEditor.MarkRange(leftMatchEditor.FromUnderlying(leftRange));
+			rightMatchEditor.ClearRangeMarkers();
 		}
 
 		public void ScrollToMarked() {

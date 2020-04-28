@@ -1,13 +1,6 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:self="clr-namespace:PatchReviewer">
-    <Style TargetType="{x:Type self:ReviewWindow}">
-        <Setter Property="OffsetPatchBrush" Value="#E0E0E0" />
-        <Setter Property="GoodPatchBrush" Value="#87CEFA" />
-        <Setter Property="WarningPatchBrush" Value="#FFA500" />
-        <Setter Property="BadPatchBrush" Value="#FF4500" />
-        <Setter Property="FailPatchBrush" Value="#FF3C3C" />
-    </Style>
     <Style TargetType="{x:Type self:SideBySide}">
         <Setter Property="LeftUnmatchedBrush" Value="#FF8C8C" />
         <Setter Property="RightUnmatchedBrush" Value="#80FF80" />
@@ -17,4 +10,11 @@
         <Setter Property="PatchRangeBrush" Value="#000000" />
         <Setter Property="EditRangeBrush" Value="#808080" />
     </Style>
+    <self:StatusBrushConverter x:Key="StatusBrushConverter" 
+                               OffsetPatchBrush="#E0E0E0" 
+                               GoodPatchBrush="#87CEFA"
+                               WarningPatchBrush="#FFA500"
+                               BadPatchBrush="#FF4500"
+                               FailPatchBrush="#FF3C3C">
+    </self:StatusBrushConverter>
 </ResourceDictionary>
