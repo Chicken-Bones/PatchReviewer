@@ -9,12 +9,12 @@
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
+            <ColumnDefinition MinWidth="100"/>
             <ColumnDefinition Width="5" />
-            <ColumnDefinition Width="*" />
+            <ColumnDefinition MinWidth="100"/>
         </Grid.ColumnDefinitions>
         <self:TitledEditor x:Name="left" />
-        <GridSplitter Grid.Column="1" Width="5" IsEnabled="False" />
+        <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Center" />
         <self:TitledEditor Grid.Column="2" x:Name="right" />
     </Grid>
 </UserControl>
