@@ -64,9 +64,9 @@
         </ToolBar>
         <Grid>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="400" />
+                <ColumnDefinition Width="400" MinWidth="100"/>
                 <ColumnDefinition Width="5" />
-                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" MinWidth="100" />
             </Grid.ColumnDefinitions>
             <TreeView Name="treeView" 
                       ItemsSource="{Binding Files}" 
@@ -98,7 +98,8 @@
                     </DataTemplate>
                 </TreeView.Resources>
             </TreeView>
-            <DockPanel Grid.Column="2" >
+            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Center" />
+			<DockPanel Grid.Column="2" >
                 <Label Name="titleLabel" DockPanel.Dock="Top" HorizontalContentAlignment="Center" FontFamily="Courier New" FontWeight="Bold" BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}" Margin="2"
                        Content="{Binding Title}"
                        Background="{Binding Status, Converter={StaticResource StatusBrushConverter}}">
