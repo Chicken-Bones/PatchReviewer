@@ -423,9 +423,24 @@ namespace PatchReviewer
 					Title = "Patch Failed",
 					Message = "Patch could not be applied, please ensure that the context is correct",
 					Image = MessageBoxImage.Error
-				}.ShowDialogOk();
+				}.ShowDialog(out bool tryHarder, ("Ok", false), ("Try Harder", true));
 
-				return;
+				if (!tryHarder)
+					return;
+
+				// TODO: patcher.Reset() ? or Retry?
+				patcher = new Patcher(new[] { p }, PatchedLinesExcludingCurrentResult);
+				patcher.FuzzyOptions.EnableDistancePenalty = false;
+				patcher.Patch(Patcher.Mode.FUZZY);
+				r = patcher.Results.Single();
+				if (!r.success) {
+					new CustomMessageBox {
+						Title = "Patch Still Failed",
+						Message = "Patch could not be applied, please ensure that the context is correct",
+						Image = MessageBoxImage.Error
+					}.ShowDialogOk("Oof");
+					return;
+				}
 			}
 
 			p = r.appliedPatch;
