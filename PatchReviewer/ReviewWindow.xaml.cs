@@ -16,12 +16,21 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Collections.ObjectModel;
 using System.Windows.Threading;
+using ICSharpCode.AvalonEdit;
 
 namespace PatchReviewer
 {
 	public partial class ReviewWindow : INotifyPropertyChanged
 	{
 		public bool AutoHeaders { get; set; }
+
+		public bool ConvertTabsToSpaces {
+			set => ApplyOption(options => options.ConvertTabsToSpaces = value);
+		}
+
+		public int IndentationSize {
+			set => ApplyOption(options => options.IndentationSize = value);
+		}
 
 		public ObservableCollection<FilePatcherViewModel> Files { get; private set; }
 
@@ -55,6 +64,13 @@ namespace PatchReviewer
 
 			patchPanel.SetTitles("Original Patch", "Applied Patch");
 			patchPanel.SyntaxHighlighting = LoadHighlighting(Properties.Resources.Patch_Mode);
+		}
+
+		private void ApplyOption(Action<TextEditorOptions> action) {
+			action(filePanel.left.editor.Options);
+			action(filePanel.right.editor.Options);
+			action(patchPanel.left.editor.Options);
+			action(patchPanel.right.editor.Options);
 		}
 
 		private IHighlightingDefinition LoadHighlighting(byte[] resource) {
