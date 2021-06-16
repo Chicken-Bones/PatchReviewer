@@ -4,11 +4,6 @@
     <UseWPF>true</UseWPF>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Remove="DiffPatch\**" />
-    <EmbeddedResource Remove="DiffPatch\**" />
-    <None Remove="DiffPatch\**" />
-  </ItemGroup>
-  <ItemGroup>
     <Compile Update="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -19,8 +14,9 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="AvalonEdit" Version="6.0.0" />
-    <Content Include="GrayscaleEffect.fx" />
-    <PackageReference Include="System.Drawing.Common" Version="4.7.0" />
+	<PackageReference Include="CodeChicken.RedBlack" Version="1.0.0" />
+	<PackageReference Include="System.Drawing.Common" Version="4.7.0" />
+	<Content Include="GrayscaleEffect.fx" />
     <Resource Include="Images\Compare.png" />
     <Resource Include="Images\Reload.png" />
     <Resource Include="Images\Blank.ico" />
@@ -34,11 +30,6 @@
     <Resource Include="Images\Save.png" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="DiffPatch\DiffPatch.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="RedBlack">
-      <HintPath>lib\RedBlack.dll</HintPath>
-    </Reference>
+    <ProjectReference Include="..\DiffPatch\DiffPatch.csproj" />
   </ItemGroup>
 </Project>

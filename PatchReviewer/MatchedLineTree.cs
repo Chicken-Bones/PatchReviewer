@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using RedBlack;
+using CodeChicken.RedBlack;
 using DiffPatch;
-using CountAccessor = RedBlack.RedBlackCountAccesor<PatchReviewer.MatchedLineNode>;
+using CountAccessor = CodeChicken.RedBlack.RedBlackCountAccesor<PatchReviewer.MatchedLineNode>;
 using System;
 
 namespace PatchReviewer
