@@ -22,7 +22,7 @@
         <CommandBinding Command="self:Commands.Rediff" CanExecute="CanExecuteRediff" Executed="ExecuteRediff"></CommandBinding>
         <CommandBinding Command="self:Commands.Revert" CanExecute="CanExecuteRevert" Executed="ExecuteRevert"></CommandBinding>
         <CommandBinding Command="self:Commands.ApprovePatch" CanExecute="CanExecuteApprove" Executed="ExecuteApprove"></CommandBinding>
-        <CommandBinding Command="self:Commands.DeletePatch" CanExecute="CanExecuteRemove" Executed="ExecuteRemove"></CommandBinding>
+        <CommandBinding Command="self:Commands.RejectPatch" CanExecute="CanExecuteReject" Executed="ExecuteReject"></CommandBinding>
     </Window.CommandBindings>
 
     <DockPanel>
@@ -51,7 +51,7 @@
             <Button Command="self:Commands.ApprovePatch" ToolTip="Approve Patch (F2)">
                 <Image Source="Images/Accept.png" Style="{StaticResource ImageEnabled}" />
             </Button>
-            <Button Command="self:Commands.DeletePatch" ToolTip="Delete Patch (F3)">
+            <Button Command="self:Commands.RejectPatch" ToolTip="Reject Patch (F3)">
                 <Image Source="Images/Delete.png" Style="{StaticResource ImageEnabled}" />
             </Button>
             <Separator/>

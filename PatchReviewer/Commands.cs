@@ -23,7 +23,7 @@ namespace PatchReviewer
 			new InputGestureCollection {
 				new KeyGesture(Key.F2)
 			});
-		public static readonly RoutedUICommand DeletePatch = new RoutedUICommand("Delete Patch", "DeletePatch", typeof(ReviewWindow),
+		public static readonly RoutedUICommand RejectPatch = new RoutedUICommand("Reject Patch", "RejectPatch", typeof(ReviewWindow),
 			new InputGestureCollection {
 				new KeyGesture(Key.F3)
 			});

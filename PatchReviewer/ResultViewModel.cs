@@ -9,7 +9,7 @@ namespace PatchReviewer
 	{
 		public FilePatcherViewModel File { get; }
 		private Patcher.Result Result { get; }
-		private int origIndex = 0;
+		private readonly int origIndex = 0;
 
 		public ResultViewModel(FilePatcherViewModel file, Patcher.Result result, int origIndex) {
 			File = file;
@@ -48,7 +48,7 @@ namespace PatchReviewer
 			OnPropertyChanged(nameof(Start2));
 		}
 
-		public bool IsRemoved => Result.success && Result.appliedPatch == null;
+		public bool IsRejected => Result.success && Result.appliedPatch == null;
 
 		public ResultStatus Status {
 			get {
@@ -68,7 +68,7 @@ namespace PatchReviewer
 
 		// shouldn't slow things down much, and worth offering some 'immutability'
 		public Patch OriginalPatch => Result.patch;
-		public Patch AppliedPatch => Result.appliedPatch == null ? null : Result.appliedPatch;
+		public Patch AppliedPatch => Result.appliedPatch;
 		public Patch ApprovedPatch => Status >= ResultStatus.OFFSET ? AppliedPatch : OriginalPatch;
 
 		private bool _modifiedInEditor;
@@ -85,7 +85,7 @@ namespace PatchReviewer
 
 		public string LabelWithModifiedIndicator => Label + (ModifiedInEditor ? " *" : "");
 
-		public string Label => IsRemoved ? $"REMOVED: {Result.patch.Header}" : Result.Summary();
+		public string Label => IsRejected ? $"REJECTED: {Result.patch.Header}" : Result.Summary();
 		public string Title => $"{File.Label} {Label}";
 
 		public string MovedPatchCountText { get; private set; } = "";
@@ -109,6 +109,7 @@ namespace PatchReviewer
 
 		protected void OnPropertyChanged([CallerMemberName] string name = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
+		// If EditingPatch is null, this will change it to rejected
 		internal void Approve() {
 			Result.success = true;
 			Result.mode = Patcher.Mode.EXACT;
@@ -127,12 +128,13 @@ namespace PatchReviewer
 			File.RecalculateOffsets();
 		}
 
-		internal void UndoRemove() {
+		internal void Restore() {
 			Result.success = false; //convert to FAILED
 			OnPropertyChanged(nameof(Status));
 			OnPropertyChanged(nameof(Label));
 			OnPropertyChanged(nameof(Title));
 			OnPropertyChanged(nameof(LabelWithModifiedIndicator));
+			File.ResultsModified = true;
 		}
 	}
 }

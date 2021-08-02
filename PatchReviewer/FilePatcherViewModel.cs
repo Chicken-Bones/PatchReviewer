@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -17,10 +16,16 @@ namespace PatchReviewer
 	{
 		private readonly FilePatcher fp;
 
+		private readonly string rejectsFilePath;
+		private readonly PatchFile rejectsFile;
+
 		public FilePatcherViewModel(FilePatcher filePatcher, string commonBasePath) {
 			fp = filePatcher;
 
-			var label = fp.patchFile.basePath;
+			rejectsFilePath = Path.ChangeExtension(fp.patchFilePath, "rej");
+			rejectsFile = File.Exists(rejectsFilePath) ? PatchFile.FromText(File.ReadAllText(rejectsFilePath), verifyHeaders: false) : new PatchFile();
+
+            var label = fp.patchFile.basePath;
 			if (commonBasePath != null && label.StartsWith(commonBasePath))
 				label = label.Substring(commonBasePath.Length);
 			Label = label;
@@ -33,7 +38,7 @@ namespace PatchReviewer
 			UpdateResults();
 		}
 
-		private void ResultsMoved(object sender, NotifyCollectionChangedEventArgs e) {
+        private void ResultsMoved(object sender, NotifyCollectionChangedEventArgs e) {
 			if (e.Action == NotifyCollectionChangedAction.Reset)
 				return;
 
@@ -65,8 +70,13 @@ namespace PatchReviewer
 
 		private void UpdateResults() {
 			_results.Clear();
+
+			var allResults = fp.results
+				.Concat(rejectsFile.patches.Select(p => new Patcher.Result { patch = p, success = true, mode = Patcher.Mode.EXACT })) // generate 'successful but not applied' results for rejects
+				.OrderBy(r => r.patch.start1);
+
 			int i = 0;
-			foreach (var r in fp.results)
+			foreach (var r in allResults)
 				_results.Add(new ResultViewModel(this, r, i++));
 			
 			// when patches apply out of order, the Patch.Range2 calculated by Patcher is inaccurate after sorting
@@ -167,6 +177,12 @@ namespace PatchReviewer
 		/// The patches list always reflects the on disk state of the patch file.
 		/// </summary>
 		public void SaveApprovedPatches(bool autoHeaders) {
+			if (!Results.Any()) { // only delete the patchFile if there are no rejects either
+				File.Delete(fp.patchFilePath);
+				File.Delete(rejectsFilePath);
+				return;
+			}
+
 			// Results are sorted by AppliedPatch location. Since some patches may not have been approved, the ordering and offsets need recalculating
 			fp.patchFile.patches = Results.Select(r => r.ApprovedPatch).Where(p => p != null).OrderBy(p => p.start1).ToList();
 
@@ -176,12 +192,16 @@ namespace PatchReviewer
 				delta += p.length2 - p.length1;
 			}
 
-			if (fp.patchFile.patches.Count == 0)
-				File.Delete(fp.patchFilePath);
-			else
-				File.WriteAllText(fp.patchFilePath, fp.patchFile.ToString(autoHeaders));
+			File.WriteAllText(fp.patchFilePath, fp.patchFile.ToString(autoHeaders));
+			fp.Save(); // saves the patched file
 
-			fp.Save();
+
+			rejectsFile.patches = Results.Where(r => r.ApprovedPatch == null).Select(r => r.OriginalPatch).OrderBy(p => p.start1).ToList();
+			if (rejectsFile.patches.Any())
+				File.WriteAllText(rejectsFilePath, rejectsFile.ToString(autoHeaders));
+			else
+				File.Delete(rejectsFilePath);
+
 
 			// reloads results from the new patch list
 			Repatch();

@@ -186,7 +186,7 @@ namespace PatchReviewer
 		private bool CanSave => (File?.IsModified ?? false) && !ItemHasUserChanges;
 
 		private bool ItemHasUserChanges => Result?.ModifiedInEditor ?? File?.ModifiedInEditor ?? false;
-		private bool CanRevert => ItemHasUserChanges || (Result?.IsRemoved ?? false);
+		private bool CanRevert => ItemHasUserChanges || (Result?.IsRejected ?? false);
 
 		private bool CanRediff => (fileTab.IsSelected ? filePanel : patchPanel).CanReDiff || !editorsInSync;
 
@@ -249,6 +249,14 @@ namespace PatchReviewer
 		private void ReCalculateEditRange() {
 			leftEditRange = new LineRange { start = 0, end = File.BaseLines.Length};
 			rightEditRange = new LineRange { start = 0, end = File.PatchedLines.Length};
+			if (Result.EditingPatch == null) {
+				if (!Result.IsRejected) {
+					// TODO: let them edit anywhere there isn't a patch to get started
+					// currently, let them edit nowhere!
+				}
+				filePanel.right.editor.TextArea.ReadOnlySectionProvider = Util.FullyReadOnly();
+				return;
+			}
 
 			int i = File.Results.ToList().IndexOf(Result);
 			var prev = File.Results.Take(i).LastOrDefault(r => r.AppliedPatch != null);
@@ -288,9 +296,10 @@ namespace PatchReviewer
 			else
 				filePanel.ClearRangeMarkers();
 
-			if (p == null) { //removed or failed, show the original patch in the patch panel
+			if (p == null) { //removed or failed, just show an offset hint
 				p = new Patch(Result.OriginalPatch);
 				p.start2 += Result.SearchOffset;
+				p.diffs.Clear();
 			}
 
 			if (soft)
@@ -301,8 +310,9 @@ namespace PatchReviewer
 					p.ToString().GetLines());
 
 			//TODO bind this
-			string patchEffect = Result.IsRemoved ? "Removed" : Result.Status == ResultStatus.FAILED ? "Failed" : "Applied";
+			string patchEffect = Result.Status == ResultStatus.FAILED ? "Failed" : "Applied";
 			patchPanel.right.Title = patchEffect + " Patch";
+			patchPanel.right.Visibility = Result.IsRejected ? Visibility.Hidden : Visibility.Visible;
 
 			editorsInSync = true;
 		}
@@ -339,6 +349,9 @@ namespace PatchReviewer
 			editorsInSync = false;
 
 			var p = FormatAssistEditingPatch();
+			if (p == null)
+				return;
+
 			//offset given other patches are already applied
 			p.start1 += rightEditRange.start - leftEditRange.start;
 			
@@ -377,7 +390,7 @@ namespace PatchReviewer
 			var keepoutRanges = new List<LineRange>();
 			int delta = 0;
 			foreach (var _result in File.Results) {
-				if (_result == Result || !(_result.AppliedPatch is Patch applied))
+				if (_result == Result || _result.AppliedPatch is not Patch applied)
 					continue;
 
 				var range = new LineRange { start = applied.start1 + delta, length = applied.length2 };
@@ -418,7 +431,7 @@ namespace PatchReviewer
 				msgBox.Message += $" (Quality { (int)(r.fuzzyQuality * 100)})";
 			}
 
-			if (msgBox != null && msgBox.ShowDialogOkCancel("Load", "Undo") == MessageBoxResult.Cancel)
+			if (msgBox != null && msgBox.ShowDialogOkCancel("Load") == MessageBoxResult.Cancel)
 				return;
 
 			Result.EditingPatch = p;
@@ -429,8 +442,8 @@ namespace PatchReviewer
 			filePanel.ScrollToMarked();
 		}
 
-		private MessageBoxResult ApproveUserPatch(bool remove = false) {
-			if (!editorsInSync) {
+		private MessageBoxResult ApproveUserPatch(bool reject = false) {
+			if (!editorsInSync && !reject) {
 				new CustomMessageBox {
 					Title = "Cannot Approve",
 					Message = $"Editors not in sync.",
@@ -439,7 +452,7 @@ namespace PatchReviewer
 				return MessageBoxResult.Cancel;
 			}
 
-			if (remove) {
+			if (reject) {
 				Result.EditingPatch = null;
 			}
 			else if (Result.EditingPatch == null) {
@@ -447,15 +460,16 @@ namespace PatchReviewer
 					throw new Exception("Inconsistent state");
 
 				var choice = new CustomMessageBox {
-					Title = "Remove Empty Patch?",
-					Message = "The approved patch is empty. Remove it?",
+					Title = "Reject Empty Patch?",
+					Message = "The approved patch is empty. Reject it?",
 					Image = MessageBoxImage.Question
-				}.ShowDialogOkCancel("Remove");
+				}.ShowDialogOkCancel("Reject");
 
 				if (choice == MessageBoxResult.Cancel)
 					return MessageBoxResult.Cancel;
 			}
 
+			// will reject the patch if Result.EditingPatch == null
 			Result.Approve();
 
 
@@ -531,9 +545,9 @@ namespace PatchReviewer
 			else if (Result.EditingPatch == null) {
 				choice = new CustomMessageBox {
 					Title = "Unapproved Changes",
-					Message = "Remove patch?",
+					Message = "Reject patch?",
 					Image = MessageBoxImage.Question
-				}.ShowDialogYesNoCancel("Remove", "Revert");
+				}.ShowDialogYesNoCancel("Reject", "Revert");
 					
 				yesAction = () => ApproveUserPatch(true);
 			}
@@ -717,8 +731,8 @@ namespace PatchReviewer
 		}
 
 		private void ExecuteRevert(object sender, ExecutedRoutedEventArgs e) {
-			if (Result?.IsRemoved ?? false)
-				Result.UndoRemove();
+			if (Result?.IsRejected ?? false)
+				Result.Restore();
 
 			ReloadPanes(File, Result, true);
 		}
@@ -734,11 +748,11 @@ namespace PatchReviewer
 			ApproveUserPatch();
 		}
 
-		private void CanExecuteRemove(object sender, CanExecuteRoutedEventArgs e) {
-			e.CanExecute = Result != null && !Result.IsRemoved;
+		private void CanExecuteReject(object sender, CanExecuteRoutedEventArgs e) {
+			e.CanExecute = Result != null && !Result.IsRejected;
 		}
 
-		private void ExecuteRemove(object sender, ExecutedRoutedEventArgs e) {
+		private void ExecuteReject(object sender, ExecutedRoutedEventArgs e) {
 			ApproveUserPatch(true);
 		}
 

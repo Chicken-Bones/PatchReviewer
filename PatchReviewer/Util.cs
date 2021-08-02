@@ -22,8 +22,19 @@ namespace PatchReviewer
 		{
 			public bool CanInsert(int offset) => true;
 
-			public IEnumerable<ISegment> GetDeletableSegments(ISegment segment) {
+			public IEnumerable<ISegment> GetDeletableSegments(ISegment segment)
+			{
 				yield return segment;
+			}
+		}
+
+		public class FullyReadOnlySectionProvider : IReadOnlySectionProvider
+		{
+			public bool CanInsert(int offset) => false;
+
+			public IEnumerable<ISegment> GetDeletableSegments(ISegment segment)
+			{
+				yield break;
 			}
 		}
 
@@ -59,5 +70,6 @@ namespace PatchReviewer
 		}
 
 		public static IReadOnlySectionProvider FullyEditable() => new FullyEditableReadOnlySectionProvider();
+		public static IReadOnlySectionProvider FullyReadOnly() => new FullyReadOnlySectionProvider();
 	}
 }
