@@ -6,7 +6,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using ICSharpCode.AvalonEdit;
 using ICSharpCode.AvalonEdit.Highlighting;
-using DiffPatch;
+using CodeChicken.DiffPatch;
 using ICSharpCode.AvalonEdit.Search;
 
 namespace PatchReviewer

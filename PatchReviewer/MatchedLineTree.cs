@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using CodeChicken.RedBlack;
-using DiffPatch;
+using CodeChicken.DiffPatch;
 using CountAccessor = CodeChicken.RedBlack.RedBlackCountAccesor<PatchReviewer.MatchedLineNode>;
 using System;
 

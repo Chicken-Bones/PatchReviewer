@@ -4,7 +4,7 @@ using System.Windows.Media;
 using ICSharpCode.AvalonEdit;
 using ICSharpCode.AvalonEdit.Document;
 using ICSharpCode.AvalonEdit.Editing;
-using DiffPatch;
+using CodeChicken.DiffPatch;
 
 namespace PatchReviewer
 {

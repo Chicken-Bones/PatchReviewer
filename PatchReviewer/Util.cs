@@ -5,7 +5,7 @@ using System.Windows.Controls;
 using ICSharpCode.AvalonEdit;
 using ICSharpCode.AvalonEdit.Document;
 using ICSharpCode.AvalonEdit.Editing;
-using DiffPatch;
+using CodeChicken.DiffPatch;
 
 namespace PatchReviewer
 {

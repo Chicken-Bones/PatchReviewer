@@ -1,4 +1,4 @@
-﻿using DiffPatch;
+﻿using CodeChicken.DiffPatch;
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;

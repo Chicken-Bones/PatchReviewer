@@ -11,7 +11,7 @@ using ICSharpCode.AvalonEdit;
 using ICSharpCode.AvalonEdit.Document;
 using ICSharpCode.AvalonEdit.Editing;
 using ICSharpCode.AvalonEdit.Rendering;
-using DiffPatch;
+using CodeChicken.DiffPatch;
 
 namespace PatchReviewer
 {
