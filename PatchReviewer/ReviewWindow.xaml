@@ -1,4 +1,4 @@
-﻿<Window x:Class="PatchReviewer.ReviewWindow"
+<Window x:Class="PatchReviewer.ReviewWindow"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -19,6 +19,7 @@
         <CommandBinding Command="self:Commands.RediffFile" CanExecute="CanExecuteRediffFile" Executed="ExecuteRediffFile"></CommandBinding>
         <CommandBinding Command="self:Commands.NextDiff" CanExecute="CanExecuteNextReviewItem" Executed="ExecuteNextReviewItem"></CommandBinding>
         <CommandBinding Command="self:Commands.PrevDiff" CanExecute="CanExecutePrevReviewItem" Executed="ExecutePrevReviewItem"></CommandBinding>
+        <CommandBinding Command="self:Commands.RefocusPatch" CanExecute="CanExecuteRefocusPatch" Executed="ExecuteRefocusPatch"></CommandBinding>
         <CommandBinding Command="self:Commands.Rediff" CanExecute="CanExecuteRediff" Executed="ExecuteRediff"></CommandBinding>
         <CommandBinding Command="self:Commands.Revert" CanExecute="CanExecuteRevert" Executed="ExecuteRevert"></CommandBinding>
         <CommandBinding Command="self:Commands.ApprovePatch" CanExecute="CanExecuteApprove" Executed="ExecuteApprove"></CommandBinding>
@@ -46,6 +47,9 @@
             </Button>
             <Button Command="self:Commands.PrevDiff" ToolTip="Previous Review (Alt+Up)">
                 <Image Source="Images/PrevDiff.png" Style="{StaticResource ImageEnabled}" />
+            </Button>
+            <Button Command="self:Commands.RefocusPatch" ToolTip="Refocus Patch (Alt+Left)">
+                <Image Source="Images/Refocus.png" Style="{StaticResource ImageEnabled}" />
             </Button>
             <Separator/>
             <Button Command="self:Commands.ApprovePatch" ToolTip="Approve Patch (F2)">
@@ -76,6 +80,7 @@
                     <Style TargetType="TreeViewItem">
                         <!-- <Setter Property="Margin" Value="-15, 0, 0, 0"/>-->
                         <Setter Property="Padding" Value="0"/>
+                        <EventSetter Event="PreviewMouseLeftButtonDown" Handler="TreeViewItem_OnPreviewMouseLeftButtonDown"/>
                     </Style>
                 </TreeView.ItemContainerStyle>
                 <TreeView.Resources>
@@ -106,7 +111,7 @@
                 </Label>
                 <TabControl x:Name="tabControl" SelectionChanged="TabControl_OnSelectionChanged" Padding="0">
                     <TabItem Header="File" x:Name="fileTab">
-                        <self:SideBySide x:Name="filePanel"/>
+                        <self:SideBySide x:Name="filePanel" MouseDown="FilePanel_OnMouseDown"/>
                     </TabItem>
                     <TabItem Header="Patch" x:Name="patchTab">
                         <self:SideBySide x:Name="patchPanel"/>

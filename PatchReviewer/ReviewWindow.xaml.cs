@@ -136,6 +136,11 @@ namespace PatchReviewer
 
 		private void SelectTab(TabItem tabItem) => Dispatcher.BeginInvoke(new Action(() => tabItem.IsSelected = true));
 
+		private void TreeViewItem_OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e) {
+			if (sender is TreeViewItem item && item.IsSelected && item.DataContext is ResultViewModel)
+				filePanel.ScrollToMarked();
+		}
+
 		private object _selectedTreeViewItem;
 		private void TreeView_OnSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e) {
 			if (e.NewValue == _selectedTreeViewItem)
@@ -769,6 +774,21 @@ namespace PatchReviewer
 		private void ExecuteReject(object sender, ExecutedRoutedEventArgs e) {
 			if (ApproveUserPatch(true) != MessageBoxResult.Cancel)
 				AutoSelectNextReviewItem();
+		}
+
+		private void CanExecuteRefocusPatch(object sender, CanExecuteRoutedEventArgs e) {
+			e.CanExecute = Result != null;
+		}
+
+		private void ExecuteRefocusPatch(object sender, ExecutedRoutedEventArgs e) {
+			filePanel.ScrollToMarked();
+		}
+
+		private void FilePanel_OnMouseDown(object sender, MouseButtonEventArgs e) {
+			if (e.ChangedButton == MouseButton.Middle && Result != null) {
+				filePanel.ScrollToMarked();
+				e.Handled = true;
+			}
 		}
 
 		#endregion

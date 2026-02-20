@@ -36,5 +36,10 @@ namespace PatchReviewer
 			new InputGestureCollection {
 				new KeyGesture(Key.R, ModifierKeys.Control)
 			});
+
+		public static readonly RoutedUICommand RefocusPatch = new RoutedUICommand("Refocus Patch", "RefocusPatch", typeof(ReviewWindow),
+			new InputGestureCollection {
+				new KeyGesture(Key.Left, ModifierKeys.Alt)
+			});
 	}
 }

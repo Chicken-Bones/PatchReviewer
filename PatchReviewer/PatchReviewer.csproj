@@ -29,6 +29,7 @@
     <Resource Include="Images\PrevDiff.png" />
     <Resource Include="Images\Refresh.png" />
     <Resource Include="Images\Save.png" />
+    <Resource Include="Images\Refocus.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DiffPatch\DiffPatch.csproj" />
