@@ -16,7 +16,7 @@
   <ItemGroup>
     <PackageReference Include="AvalonEdit" Version="6.0.0" />
 	<PackageReference Include="CodeChicken.RedBlack" Version="1.0.0" />
-	<PackageReference Include="System.Drawing.Common" Version="4.7.0" />
+	<PackageReference Include="System.Drawing.Common" Version="4.7.2" />
 	<Content Include="GrayscaleEffect.fx" />
     <Resource Include="Images\Compare.png" />
     <Resource Include="Images\Reload.png" />
