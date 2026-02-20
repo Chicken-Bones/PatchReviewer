@@ -482,8 +482,10 @@ namespace PatchReviewer
 					Message = "All items requiring user review have been approved. Save patch and results?",
 					Image = MessageBoxImage.Question
 				}.ShowDialogOkCancel("Save");
-				if (save == MessageBoxResult.OK)
-					SaveFile();
+				if (save != MessageBoxResult.OK)
+					return MessageBoxResult.Cancel;
+
+				SaveFile();
 			}
 
 			return MessageBoxResult.OK;
@@ -654,6 +656,17 @@ namespace PatchReviewer
 			Select(NextReviewItem(false));
 		}
 
+		private void AutoSelectNextReviewItem() {
+			var next = NextReviewItem(false);
+			var prev = NextReviewItem(true);
+			if (next != null && next.File == File)
+				Select(next);
+			else if (prev != null && prev.File == File)
+				Select(prev);
+			else if (next != null)
+				Select(next);
+		}
+
 		private void CanExecutePrevReviewItem(object sender, CanExecuteRoutedEventArgs e) {
 			e.CanExecute = NextReviewItem(true) != null;
 		}
@@ -745,7 +758,8 @@ namespace PatchReviewer
 			if (filePanel.CanReDiff)
 				RediffFileEditor();
 
-			ApproveUserPatch();
+			if (ApproveUserPatch() != MessageBoxResult.Cancel)
+				AutoSelectNextReviewItem();
 		}
 
 		private void CanExecuteReject(object sender, CanExecuteRoutedEventArgs e) {
@@ -753,7 +767,8 @@ namespace PatchReviewer
 		}
 
 		private void ExecuteReject(object sender, ExecutedRoutedEventArgs e) {
-			ApproveUserPatch(true);
+			if (ApproveUserPatch(true) != MessageBoxResult.Cancel)
+				AutoSelectNextReviewItem();
 		}
 
 		#endregion
