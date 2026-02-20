@@ -318,17 +318,17 @@ namespace PatchReviewer
 				p.diffs.Clear();
 			}
 
-			if (soft)
+			if (soft) {
 				patchPanel.ReplaceEditedLines(p.ToString().GetLines());
-			else
+			}
+			else {
 				patchPanel.LoadDiff(
 					Result.OriginalPatch.ToString().GetLines(),
 					p.ToString().GetLines());
 
-			//TODO bind this
-			string patchEffect = Result.Status == ResultStatus.FAILED ? "Failed" : "Applied";
-			patchPanel.right.Title = patchEffect + " Patch";
-			patchPanel.right.Visibility = Result.IsRejected ? Visibility.Hidden : Visibility.Visible;
+				patchPanel.right.Title = $"{(Result.Status == ResultStatus.FAILED ? "Failed" : "Applied")} Patch";
+				patchPanel.right.Visibility = Result.IsRejected ? Visibility.Hidden : Visibility.Visible;
+			}
 
 			editorsInSync = true;
 		}
