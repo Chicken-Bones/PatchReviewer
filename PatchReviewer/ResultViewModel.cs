@@ -128,7 +128,7 @@ namespace PatchReviewer
 			File.RecalculateOffsets();
 		}
 
-		internal void Restore() {
+		internal void ConvertRejectedToFailed() {
 			Result.success = false; //convert to FAILED
 			OnPropertyChanged(nameof(Status));
 			OnPropertyChanged(nameof(Label));

@@ -759,7 +759,7 @@ namespace PatchReviewer
 
 		private void ExecuteRevert(object sender, ExecutedRoutedEventArgs e) {
 			if (Result?.IsRejected ?? false)
-				Result.Restore();
+				Result.ConvertRejectedToFailed();
 
 			ReloadPanes(File, Result, linesChanged: true);
 		}
