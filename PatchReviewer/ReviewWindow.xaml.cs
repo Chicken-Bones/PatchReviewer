@@ -385,8 +385,6 @@ namespace PatchReviewer
 				if (!tryHarder)
 					return;
 
-				// TODO: patcher.Reset() ? or Retry?
-				patcher = new Patcher(new[] { p }, PatchedLinesExcludingCurrentResult);
 				patcher.FuzzyOptions.EnableDistancePenalty = false;
 				patcher.Patch(Patcher.Mode.FUZZY);
 				r = patcher.Results.Single();
