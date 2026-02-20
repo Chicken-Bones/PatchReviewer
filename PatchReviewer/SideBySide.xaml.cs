@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -119,6 +120,7 @@ namespace PatchReviewer
 		}
 
 		public bool IsModified => right.editor.IsModified;
+		public event EventHandler IsModifiedChanged;
 
 		public SideBySide() {
 			InitializeComponent();
@@ -129,6 +131,10 @@ namespace PatchReviewer
 			PrepareEditors(right.editor, left.editor);
 
 			(leftMatchEditor, rightMatchEditor) = MatchedLineEditor.Create(left.editor, right.editor);
+
+			DependencyPropertyDescriptor
+				.FromProperty(TextEditor.IsModifiedProperty, typeof(TextEditor))
+				.AddValueChanged(right.editor, (s, e) => IsModifiedChanged?.Invoke(this, EventArgs.Empty));
 		}
 
 		private void PrepareEditors(TextEditor textEditor1, TextEditor textEditor2) {

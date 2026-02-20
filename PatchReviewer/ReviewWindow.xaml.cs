@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -64,6 +64,9 @@ namespace PatchReviewer
 
 			patchPanel.SetTitles("Original Patch", "Applied Patch");
 			patchPanel.SyntaxHighlighting = LoadHighlighting(Properties.Resources.Patch_Mode);
+
+			filePanel.IsModifiedChanged += (s, e) => UpdateModifiedInEditor();
+			patchPanel.IsModifiedChanged += (s, e) => UpdateModifiedInEditor();
 		}
 
 		private void ApplyOption(Action<TextEditorOptions> action) {
@@ -202,9 +205,9 @@ namespace PatchReviewer
 			bool newFile = File != f;
 			if (newFile) {
 				if (File != null)
-					File.PropertyChanged -= TrackPatchedLineChanges;
+					File.PropertyChanged -= TrackFileChanges;
 				if (f != null)
-					f.PropertyChanged += TrackPatchedLineChanges;
+					f.PropertyChanged += TrackFileChanges;
 			}
 
 			if (Result != r && Result?.EditingPatch != null)
@@ -239,9 +242,16 @@ namespace PatchReviewer
 			}
 		}
 
-		private void TrackPatchedLineChanges(object sender, PropertyChangedEventArgs e) {
+		private void TrackFileChanges(object sender, PropertyChangedEventArgs e) {
 			if (e.PropertyName == nameof(File.PatchedLines))
 				ReloadPanes(File, Result, linesChanged: true);
+		}
+
+		private void UpdateModifiedInEditor() {
+			if (Result != null)
+				Result.ModifiedInEditor = filePanel.IsModified || patchPanel.IsModified;
+			else if (File != null)
+				File.ModifiedInEditor = filePanel.IsModified;
 		}
 
 		private void AddEditWarning() {
@@ -634,9 +644,6 @@ namespace PatchReviewer
 			if (File == null)
 				return;
 
-			//TODO: actually property change bind to the text editor
-			File.ModifiedInEditor = filePanel.IsModified && Result == null;
-
 			e.CanExecute = File.IsModified;
 		}
 
@@ -741,10 +748,6 @@ namespace PatchReviewer
 		private void CanExecuteRevert(object sender, CanExecuteRoutedEventArgs e) {
 			if (fileTab == null)
 				return;
-
-			//TODO: actually property change bind to the text editor
-			if (Result != null)
-				Result.ModifiedInEditor |= filePanel.IsModified || patchPanel.IsModified;
 
 			e.CanExecute = CanRevert;
 		}
