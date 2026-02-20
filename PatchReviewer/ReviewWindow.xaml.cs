@@ -254,14 +254,6 @@ namespace PatchReviewer
 		private void ReCalculateEditRange() {
 			leftEditRange = new LineRange { start = 0, end = File.BaseLines.Length};
 			rightEditRange = new LineRange { start = 0, end = File.PatchedLines.Length};
-			if (Result.EditingPatch == null) {
-				if (!Result.IsRejected) {
-					// TODO: let them edit anywhere there isn't a patch to get started
-					// currently, let them edit nowhere!
-				}
-				filePanel.right.editor.TextArea.ReadOnlySectionProvider = Util.FullyReadOnly();
-				return;
-			}
 
 			int i = File.Results.ToList().IndexOf(Result);
 			var prev = File.Results.Take(i).LastOrDefault(r => r.AppliedPatch != null);
@@ -274,6 +266,15 @@ namespace PatchReviewer
 			if (next != null) {
 				leftEditRange.end = next.Start1;
 				rightEditRange.end = next.Start2;
+			}
+
+			if (Result.EditingPatch == null) {
+				if (!Result.IsRejected) {
+					// TODO: let them edit anywhere there isn't a patch to get started
+					// currently, let them edit nowhere!
+				}
+				filePanel.right.editor.TextArea.ReadOnlySectionProvider = Util.FullyReadOnly();
+				return;
 			}
 
 			filePanel.SetEditableRange(rightEditRange);
