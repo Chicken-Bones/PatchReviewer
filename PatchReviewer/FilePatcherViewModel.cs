@@ -79,8 +79,6 @@ namespace PatchReviewer
 			foreach (var r in allResults)
 				_results.Add(new ResultViewModel(this, r, i++));
 			
-			// when patches apply out of order, the Patch.Range2 calculated by Patcher is inaccurate after sorting
-			// RecalculateOffsets uses the current sort order
 			RecalculateOffsets();
 		}
 
@@ -218,7 +216,7 @@ namespace PatchReviewer
 		public void RecalculateOffsets() {
 			int delta = 0;
 			foreach (var r in Results) {
-				var p = r.AppliedPatch;
+				var p = r.ViewPatch;
 				if (p != null) {
 					r.MoveTo(p.start1 + delta);
 					delta += p.length2 - p.length1;

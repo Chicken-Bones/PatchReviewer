@@ -426,11 +426,17 @@ namespace PatchReviewer
 				return;
 			}
 
+			bool moved = false;
 			CustomMessageBox msgBox = null;
 			if (!new LineRange { start = rightEditRange.start, length = leftEditRange.length}.Contains(appliedRange)) {
+				moved = true;
+				int patchesMoved = File.Results.TakeWhile(r => r.Start1 < p.start1).Count() - Result.AppliedIndex;
+				int linesMoved = p.start1 - Result.Start1;
+
 				msgBox = new CustomMessageBox {
 					Title = "Moved Patch",
-					Message = "Patch has been moved.\nLoad assisted patch?",
+					Message = $"Patch has been moved {(patchesMoved > 0 ? "Down" : "Up")} {Math.Abs(patchesMoved)} patches and {Math.Abs(linesMoved)} lines." +
+					$"\nLoad assisted patch?",
 					Image = MessageBoxImage.Question
 				};
 			}
@@ -451,6 +457,7 @@ namespace PatchReviewer
 			Result.EditingPatch = p;
 			
 			filePanel.LoadDiff(File.BaseLines, patcher.ResultLines, underlyingChange: true, original: false);
+			if (moved) File.RecalculateOffsets();
 			ReloadEditingPatch(r.mode != Patcher.Mode.FUZZY);
 			ReCalculateEditRange();
 			filePanel.ScrollToMarked();
