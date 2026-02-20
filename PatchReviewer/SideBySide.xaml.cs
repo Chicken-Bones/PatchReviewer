@@ -190,11 +190,11 @@ namespace PatchReviewer
 
 		public IReadOnlyList<string> EditedLines => rightMatchEditor.UnderlyingLines;
 
-		public void ReplaceEditedLines(IReadOnlyList<string> lines) => LoadDiff(leftMatchEditor.UnderlyingLines, lines, false);
+		public void ReplaceEditedLines(IReadOnlyList<string> lines) => LoadDiff(leftMatchEditor.UnderlyingLines, lines, underlyingChange: false);
 
 		public bool CanReDiff => rightMatchEditor.LineTree != null && rightMatchEditor.ChangedSinceLoad;
 
-		public void ReDiff() => LoadDiff(leftMatchEditor.UnderlyingLines, rightMatchEditor.UnderlyingLines, false);
+		public void ReDiff() => LoadDiff(leftMatchEditor.UnderlyingLines, rightMatchEditor.UnderlyingLines, underlyingChange: false);
 
 		public List<Patch> Diff() {
 			var lineTree = rightMatchEditor.LineTree;
@@ -214,8 +214,8 @@ namespace PatchReviewer
 			}
 
 			var lineTree = rightMatchEditor.LineTree;
-			var leftTree = lineTree.Access(false);
-			var rightTree = lineTree.Access(true);
+			var leftTree = lineTree.Access(side: false);
+			var rightTree = lineTree.Access(side: true);
 
 			// grab context
 			var firstNode = rightTree[editRange.first];
@@ -237,8 +237,8 @@ namespace PatchReviewer
 			var matches = MatchedLineTree.ToMatches(firstNode.To(lastNode), range1.length);
 			
 			// create patch
-			var lines1 = leftMatchEditor.GetLines(range0, true);
-			var lines2 = rightMatchEditor.GetLines(range0, true);
+			var lines1 = leftMatchEditor.GetLines(range0, underlying: true);
+			var lines2 = rightMatchEditor.GetLines(range0, underlying: true);
 			var patch = new Patch {
 				start1 = range1.start, length1 = range1.length,
 				start2 = range2.start, length2 = range2.length,

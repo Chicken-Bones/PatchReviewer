@@ -151,8 +151,8 @@ namespace PatchReviewer
 
 		public MatchedLineTree(int[] matches, int rightLineCount) {
 			BuildFrom(ToNodes(matches, rightLineCount));
-			leftAccessor = new SideAccess(this, false);
-			rightAccessor = new SideAccess(this, true);
+			leftAccessor = new SideAccess(this, side: false);
+			rightAccessor = new SideAccess(this, side: true);
 		}
 
 		public SideAccess Access(bool side) => side ? rightAccessor : leftAccessor;
@@ -169,19 +169,19 @@ namespace PatchReviewer
 			int right = 0;
 			foreach (var m in matches) {
 				if (m == -1) {
-					list.Add(new MatchedLineNode(true, false));
+					list.Add(new MatchedLineNode(hasLeftLine: true, hasRightLine: false));
 					continue;
 				}
 				while (right < m) {
-					list.Add(new MatchedLineNode(false, true));
+					list.Add(new MatchedLineNode(hasLeftLine: false, hasRightLine: true));
 					right++;
 				}
-				list.Add(new MatchedLineNode(true, true));
+				list.Add(new MatchedLineNode(hasLeftLine: true, hasRightLine: true));
 				right++;
 			}
 
 			while (right < rightLineCount){
-				list.Add(new MatchedLineNode(false, true));
+				list.Add(new MatchedLineNode(hasLeftLine: false, hasRightLine: true));
 				right++;
 			}
 

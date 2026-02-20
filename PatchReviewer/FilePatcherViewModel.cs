@@ -92,7 +92,7 @@ namespace PatchReviewer
 		public ListCollectionView Children { get; }
 
 		private static MethodInfo _restoreLiveShapingNow = typeof(ListCollectionView).GetMethod("RestoreLiveShaping", (BindingFlags)(-1));
-		private static MethodInfo _isLiveShapingDirty = typeof(ListCollectionView).GetProperty("IsLiveShapingDirty", (BindingFlags)(-1)).GetGetMethod(true);
+		private static MethodInfo _isLiveShapingDirty = typeof(ListCollectionView).GetProperty("IsLiveShapingDirty", (BindingFlags)(-1)).GetGetMethod(nonPublic: true);
 		public IEnumerable<ResultViewModel> Results {
 			get {
 				if ((bool)_isLiveShapingDirty.Invoke(Children, null))

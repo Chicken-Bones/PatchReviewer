@@ -110,8 +110,8 @@ namespace PatchReviewer
 		#region Public Interface
 		public static (MatchedLineEditor left, MatchedLineEditor right) Create(TextEditor leftEditor, TextEditor rightEditor) {
 			var undoStack = new UndoStack();
-			var left = new MatchedLineEditor(leftEditor, undoStack, false);
-			var right = new MatchedLineEditor(rightEditor, undoStack, true);
+			var left = new MatchedLineEditor(leftEditor, undoStack, side: false);
+			var right = new MatchedLineEditor(rightEditor, undoStack, side: true);
 			left.otherEditor = right;
 			right.otherEditor = left;
 			left.AttachToDocument();
@@ -338,7 +338,7 @@ namespace PatchReviewer
 			isChanging = false;
 			
 			var newLineRange = GetLineRange(changedSegment);
-			var newLines = GetLines(newLineRange, false);
+			var newLines = GetLines(newLineRange, underlying: false);
 
 			//complete deletion of lines
 			if (changedSegment.length == 0 && LineTree.Slice(changingLines).Any(n => !n.HasLine(side)))
@@ -351,7 +351,7 @@ namespace PatchReviewer
 				newLineRange.end++;
 			}
 
-			var otherLines = otherEditor.GetLines(changingLines, true);
+			var otherLines = otherEditor.GetLines(changingLines, underlying: true);
 			var tree = MatchedLineTree.FromLines(side ? otherLines : newLines, side ? newLines : otherLines);
 			
 			InternalReplaceLines(newLineRange, BuildEditorText(tree, newLines));

@@ -55,7 +55,7 @@ namespace PatchReviewer
 
 		private void SelectFirstItem() {
 			Select(Files[0]);
-			if (NextReviewItem(false) is ResultViewModel r)
+			if (NextReviewItem(backwards: false) is ResultViewModel r)
 				Select(r);
 		}
 
@@ -195,8 +195,8 @@ namespace PatchReviewer
 
 		private bool CanRediff => (fileTab.IsSelected ? filePanel : patchPanel).CanReDiff || !editorsInSync;
 
-		private void OnItemSelected(FilePatcherViewModel f) => ReloadPanes(f, null, false);
-		private void OnItemSelected(ResultViewModel r) => ReloadPanes(r.File, r, false);
+		private void OnItemSelected(FilePatcherViewModel f) => ReloadPanes(f, null, linesChanged: false);
+		private void OnItemSelected(ResultViewModel r) => ReloadPanes(r.File, r, linesChanged: false);
 
 		private void ReloadPanes(FilePatcherViewModel f, ResultViewModel r, bool linesChanged) {
 			bool newFile = File != f;
@@ -241,7 +241,7 @@ namespace PatchReviewer
 
 		private void TrackPatchedLineChanges(object sender, PropertyChangedEventArgs e) {
 			if (e.PropertyName == nameof(File.PatchedLines))
-				ReloadPanes(File, Result, true);
+				ReloadPanes(File, Result, linesChanged: true);
 		}
 
 		private void AddEditWarning() {
@@ -441,7 +441,7 @@ namespace PatchReviewer
 
 			Result.EditingPatch = p;
 			
-			filePanel.LoadDiff(File.BaseLines, patcher.ResultLines, true, false);
+			filePanel.LoadDiff(File.BaseLines, patcher.ResultLines, underlyingChange: true, original: false);
 			ReloadEditingPatch(r.mode != Patcher.Mode.FUZZY);
 			ReCalculateEditRange();
 			filePanel.ScrollToMarked();
@@ -556,7 +556,7 @@ namespace PatchReviewer
 					Image = MessageBoxImage.Question
 				}.ShowDialogYesNoCancel("Reject", "Revert");
 					
-				yesAction = () => ApproveUserPatch(true);
+				yesAction = () => ApproveUserPatch(reject: true);
 			}
 			else {
 				choice = new CustomMessageBox {
@@ -654,16 +654,16 @@ namespace PatchReviewer
 		}
 
 		private void CanExecuteNextReviewItem(object sender, CanExecuteRoutedEventArgs e) {
-			e.CanExecute = NextReviewItem(false) != null;
+			e.CanExecute = NextReviewItem(backwards: false) != null;
 		}
 
 		private void ExecuteNextReviewItem(object sender, ExecutedRoutedEventArgs e) {
-			Select(NextReviewItem(false));
+			Select(NextReviewItem(backwards: false));
 		}
 
 		private void AutoSelectNextReviewItem() {
-			var next = NextReviewItem(false);
-			var prev = NextReviewItem(true);
+			var next = NextReviewItem(backwards: false);
+			var prev = NextReviewItem(backwards: true);
 			if (next != null && next.File == File)
 				Select(next);
 			else if (prev != null && prev.File == File)
@@ -673,11 +673,11 @@ namespace PatchReviewer
 		}
 
 		private void CanExecutePrevReviewItem(object sender, CanExecuteRoutedEventArgs e) {
-			e.CanExecute = NextReviewItem(true) != null;
+			e.CanExecute = NextReviewItem(backwards: true) != null;
 		}
 
 		private void ExecutePrevReviewItem(object sender, ExecutedRoutedEventArgs e) {
-			Select(NextReviewItem(true));
+			Select(NextReviewItem(backwards: true));
 		}
 
 		private void CanExecuteRediffFile(object sender, CanExecuteRoutedEventArgs e) {
@@ -752,7 +752,7 @@ namespace PatchReviewer
 			if (Result?.IsRejected ?? false)
 				Result.Restore();
 
-			ReloadPanes(File, Result, true);
+			ReloadPanes(File, Result, linesChanged: true);
 		}
 
 		private void CanExecuteApprove(object sender, CanExecuteRoutedEventArgs e) {
@@ -772,7 +772,7 @@ namespace PatchReviewer
 		}
 
 		private void ExecuteReject(object sender, ExecutedRoutedEventArgs e) {
-			if (ApproveUserPatch(true) != MessageBoxResult.Cancel)
+			if (ApproveUserPatch(reject: true) != MessageBoxResult.Cancel)
 				AutoSelectNextReviewItem();
 		}
 
