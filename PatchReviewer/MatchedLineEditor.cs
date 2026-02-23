@@ -21,7 +21,7 @@ namespace PatchReviewer
 		public static readonly Color MatchedHighlightBackground = Color.FromRgb(191, 239, 255);
 		public static readonly Color UnmatchedBackground = Colors.Orange;
 		public static readonly Color OffsetBackground = Colors.LightGray;
-		
+
 		public Brush MatchedBrush;
 		public Brush UnmatchedBrush;
 		public Brush MatchedHighlightBrush;
@@ -90,7 +90,7 @@ namespace PatchReviewer
 			textView.BackgroundRenderers.Add(this);
 			textView.BackgroundRenderers.Add(rangeMarker = new LineRangeHighlighter(textEditor));
 			textView.LineTransformers.Add(new DiffTextColorizer(this));
-			
+
 			editRangeMarker = new EditRangeProvider(textEditor);
 			if (!textEditor.IsReadOnly)
 				textView.BackgroundRenderers.Add(editRangeMarker);
@@ -155,7 +155,7 @@ namespace PatchReviewer
 				LineRange? editRange = null;
 				if (editRangeMarker.Valid)
 					editRange = EditableRange;
-				
+
 				//using character replace keeps the caret position somewhat reasonable
 				//in the future, we could generate a proper offset change map, and even make undo supported, but it's not worth the time at the moment
 				LineTree = null;
@@ -192,7 +192,7 @@ namespace PatchReviewer
 
 					r.first = LineTree.Access(side).IndexOf(node) + 1;
 				}
-			
+
 				if (r.end < LineTree.Count) {
 					var node = LineTree[r.end];
 					if (!node.HasLine(side))
@@ -303,11 +303,11 @@ namespace PatchReviewer
 				//throw new InvalidOperationException("Multi-range change");
 			}
 		}
-		
+
 		private void TextChanged(object sender, DocumentChangeEventArgs e) {
 			if (LineTree == null || ignoreChangeEvents || !undoStack.AcceptChanges)
 				return;
-			
+
 			var range = new LineRange { start = e.Offset, length = e.InsertionLength};
 			range = new LineRange {
 				start = currentDocument.GetLineByOffset(range.start).Offset,
@@ -336,7 +336,7 @@ namespace PatchReviewer
 				return;
 
 			isChanging = false;
-			
+
 			var newLineRange = GetLineRange(changedSegment);
 			var newLines = GetLines(newLineRange, underlying: false);
 
@@ -346,14 +346,14 @@ namespace PatchReviewer
 
 			//absorb unmatched lines into changing range when inserting up to length of insertion
 			while (newLineRange.length > changingLines.length &&
-			       changingLines.last+1 < LineTree.Count && !LineTree[changingLines.last+1].HasLine(side)) {
+				   changingLines.last+1 < LineTree.Count && !LineTree[changingLines.last+1].HasLine(side)) {
 				changingLines.end++;
 				newLineRange.end++;
 			}
 
 			var otherLines = otherEditor.GetLines(changingLines, underlying: true);
 			var tree = MatchedLineTree.FromLines(side ? otherLines : newLines, side ? newLines : otherLines);
-			
+
 			InternalReplaceLines(newLineRange, BuildEditorText(tree, newLines));
 			otherEditor.InternalReplaceLines(changingLines, otherEditor.BuildEditorText(tree, otherLines));
 

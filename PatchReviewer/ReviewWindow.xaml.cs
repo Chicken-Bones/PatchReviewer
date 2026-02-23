@@ -99,7 +99,7 @@ namespace PatchReviewer
 			}
 			else if (treeView.SelectedItem is FilePatcherViewModel selectedFile) {
 				// last result of prev file / next result of current file
-				var r = backwards ? 
+				var r = backwards ?
 					Files.Take(Files.IndexOf(selectedFile)).LastOrDefault(f => f.Results.Any())?.Results.Last() :
 					Files.Skip(Files.IndexOf(selectedFile)).FirstOrDefault(f => f.Results.Any())?.Results.First();
 
@@ -187,10 +187,10 @@ namespace PatchReviewer
 			else if (e.RemovedItems[0] == patchTab && patchPanel.CanReDiff)
 				RediffPatchEditor();
 		}
-		
+
 		#region Result and Patch Functions
 
-		// can save as long as 
+		// can save as long as
 		private bool CanSave => (File?.IsModified ?? false) && !ItemHasUserChanges;
 
 		private bool ItemHasUserChanges => Result?.ModifiedInEditor ?? File?.ModifiedInEditor ?? false;
@@ -370,7 +370,7 @@ namespace PatchReviewer
 
 			//offset given other patches are already applied
 			p.start1 += rightEditRange.start - leftEditRange.start;
-			
+
 			var patcher = new Patcher(new[] {p}, PatchedLinesExcludingCurrentResult);
 			patcher.Patch(Patcher.Mode.FUZZY);
 
@@ -422,7 +422,7 @@ namespace PatchReviewer
 					Message = $"Patch applied ({r.mode}) inside another patch {appliedRange}",
 					Image = MessageBoxImage.Error
 				}.ShowDialogOk("Ignore");
-				
+
 				return;
 			}
 
@@ -455,7 +455,7 @@ namespace PatchReviewer
 				return;
 
 			Result.EditingPatch = p;
-			
+
 			filePanel.LoadDiff(File.BaseLines, patcher.ResultLines, underlyingChange: true, original: false);
 			if (moved) File.RecalculateOffsets();
 			ReloadEditingPatch(r.mode != Patcher.Mode.FUZZY);
@@ -553,7 +553,7 @@ namespace PatchReviewer
 					Message = "Modifications would be lost. Rediff and approve?",
 					Image = MessageBoxImage.Question
 				}.ShowDialogYesNoCancel("Rediff", "Revert");
-					
+
 				if (choice == MessageBoxResult.Cancel)
 					return MessageBoxResult.Cancel;
 
@@ -562,7 +562,7 @@ namespace PatchReviewer
 					if (CanRediff)//failed to sync
 						return MessageBoxResult.Cancel;
 				}
-					
+
 				yesAction = () => ApproveUserPatch();
 			}
 			else if (Result.EditingPatch == null) {
@@ -571,7 +571,7 @@ namespace PatchReviewer
 					Message = "Reject patch?",
 					Image = MessageBoxImage.Question
 				}.ShowDialogYesNoCancel("Reject", "Revert");
-					
+
 				yesAction = () => ApproveUserPatch(reject: true);
 			}
 			else {
@@ -580,7 +580,7 @@ namespace PatchReviewer
 					Message = "Approve changes to patch?",
 					Image = MessageBoxImage.Question
 				}.ShowDialogYesNoCancel("Approve", "Revert");
-					
+
 				yesAction = () => ApproveUserPatch();
 			}
 
@@ -702,8 +702,8 @@ namespace PatchReviewer
 				var choice = new CustomMessageBox {
 					Title = "Unapproved Patch Results",
 					Message = "This file still has unapproved patch results. " +
-					          "Editing in file mode will replace the results list, " +
-					          "effectively approving the current patched file."
+							  "Editing in file mode will replace the results list, " +
+							  "effectively approving the current patched file."
 				}.ShowDialogOkCancel("Approve All");
 
 				if (choice == MessageBoxResult.Cancel)
@@ -818,8 +818,8 @@ namespace PatchReviewer
 				var choice = new CustomMessageBox {
 					Title = "Unapproved Patch Results",
 					Message = "This file still has unapproved patch results. " +
-					          "Editing in file mode will replace the results list, " +
-					          "effectively approving the current patched file.",
+							  "Editing in file mode will replace the results list, " +
+							  "effectively approving the current patched file.",
 					Image = MessageBoxImage.Warning
 				}.ShowDialogOkCancel("Edit Anyway");
 

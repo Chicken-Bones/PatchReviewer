@@ -79,22 +79,22 @@ namespace PatchReviewer
 		public void Draw(TextView textView, DrawingContext drawingContext) {
 			if (!Valid)
 				return;
-			
+
 			var builder = new BackgroundGeometryBuilder();
 			var line1 = textView.GetVisualLine(startAnchor.Line);
 			if (line1 != null)
-				builder.AddRectangle(textView, new Rect(0, 
-					line1.VisualTop - textView.ScrollOffset.Y, 
+				builder.AddRectangle(textView, new Rect(0,
+					line1.VisualTop - textView.ScrollOffset.Y,
 					textView.ActualWidth, LineHeight));
-			
+
 			var line2 = textView.GetVisualLine(endAnchor.Line);
 			if (line2 != null) {
 				var y = line2.GetTextLineVisualYPosition(line2.TextLines.Last(), VisualYPosition.LineBottom);
-				builder.AddRectangle(textView, new Rect(0, 
+				builder.AddRectangle(textView, new Rect(0,
 					y - textView.ScrollOffset.Y - LineHeight,
 					textView.ActualWidth, LineHeight));
 			}
-			
+
 			var geometry = builder.CreateGeometry();
 			if (geometry != null)
 				drawingContext.DrawGeometry(Brush, BorderPen, geometry);

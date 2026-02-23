@@ -116,18 +116,18 @@ namespace PatchReviewer
 				this.tree = tree;
 				this.side = side;
 			}
-			
+
 			public int Count => tree.Root?.LineCount(side) ?? 0;
 
 			public MatchedLineNode this[int i] =>
 				CountAccessor.GetByIndex(tree, i, n => n.LineCount(side));
-			
+
 			public int IndexOf(MatchedLineNode node) =>
 				CountAccessor.IndexOf(tree, node, n => n.LineCount(side));
-			
+
 			public int OppositeIndexOf(MatchedLineNode node) =>
 				CountAccessor.IndexOf(tree, node, n => n.LineCount(!side));
-			
+
 			public int CombinedIndexOf(int lineNo) => lineNo == Count ? tree.Count : CombinedIndexOf(this[lineNo]);
 			public int CombinedIndexOf(MatchedLineNode node) =>
 				CountAccessor.IndexOf(tree, node, n => n.lineCount);
@@ -160,8 +160,8 @@ namespace PatchReviewer
 		public int IndexOf(MatchedLineNode node) => CountAccessor.IndexOf(this, node, n => n.lineCount);
 		public MatchedLineNode this[int index] => CountAccessor.GetByIndex(this, index, n => n.lineCount);
 
-		public IEnumerable<MatchedLineNode> Slice(LineRange range) => 
-			range.length == 0 ? Enumerable.Empty<MatchedLineNode>() : 
+		public IEnumerable<MatchedLineNode> Slice(LineRange range) =>
+			range.length == 0 ? Enumerable.Empty<MatchedLineNode>() :
 				this[range.first].To(this[range.last]);
 
 		private static IReadOnlyList<MatchedLineNode> ToNodes(int[] matches, int rightLineCount) {

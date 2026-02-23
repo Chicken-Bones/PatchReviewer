@@ -19,7 +19,7 @@ namespace PatchReviewer
 
 		public GrayscaleEffect() {
 			PixelShader = _pixelShader;
-			
+
 			UpdateShaderValue(InputProperty);
 			UpdateShaderValue(DesaturationFactorProperty);
 		}
@@ -29,7 +29,7 @@ namespace PatchReviewer
 			get => (Brush)GetValue(InputProperty);
 			set => SetValue(InputProperty, value);
 		}
-		
+
 		public static readonly DependencyProperty DesaturationFactorProperty = DependencyProperty.Register("DesaturationFactor", typeof(double), typeof(GrayscaleEffect), new UIPropertyMetadata(0.0, PixelShaderConstantCallback(0), CoerceDesaturationFactor));
 		public double DesaturationFactor {
 			get => (double)GetValue(DesaturationFactorProperty);

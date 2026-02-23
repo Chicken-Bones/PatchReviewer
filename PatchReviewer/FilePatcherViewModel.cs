@@ -25,7 +25,7 @@ namespace PatchReviewer
 			rejectsFilePath = Path.ChangeExtension(fp.patchFilePath, "rej");
 			rejectsFile = File.Exists(rejectsFilePath) ? PatchFile.FromText(File.ReadAllText(rejectsFilePath), verifyHeaders: false) : new PatchFile();
 
-            var label = fp.patchFile.basePath;
+			var label = fp.patchFile.basePath;
 			if (commonBasePath != null && label.StartsWith(commonBasePath))
 				label = label.Substring(commonBasePath.Length);
 			Label = label;
@@ -38,7 +38,7 @@ namespace PatchReviewer
 			UpdateResults();
 		}
 
-        private void ResultsMoved(object sender, NotifyCollectionChangedEventArgs e) {
+		private void ResultsMoved(object sender, NotifyCollectionChangedEventArgs e) {
 			if (e.Action == NotifyCollectionChangedAction.Reset)
 				return;
 
@@ -78,7 +78,7 @@ namespace PatchReviewer
 			int i = 0;
 			foreach (var r in allResults)
 				_results.Add(new ResultViewModel(this, r, i++));
-			
+
 			RecalculateOffsets();
 		}
 
@@ -100,7 +100,7 @@ namespace PatchReviewer
 			}
 		}
 
-        private bool _modified;
+		private bool _modified;
 		public bool IsModified {
 			get => _modified;
 			private set {

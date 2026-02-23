@@ -5,7 +5,7 @@ namespace PatchReviewer
 	public static class Commands
 	{
 		public static readonly RoutedUICommand Reload = new RoutedUICommand("Reload File (Revert All)", "Reload", typeof(ReviewWindow));
-		
+
 		public static readonly RoutedUICommand RepatchFile = new RoutedUICommand("Reapply Patches", "RepatchFile", typeof(ReviewWindow));
 		public static readonly RoutedUICommand RediffFile = new RoutedUICommand("Reapply Diffs", "RediffFile", typeof(ReviewWindow));
 

@@ -110,7 +110,7 @@ namespace PatchReviewer
 					Content = name,
 					Tag = result
 				});
-			
+
 			ShowDialog();
 
 			t = hasResult ? (T) result : default(T);
@@ -118,14 +118,14 @@ namespace PatchReviewer
 		}
 
 		public MessageBoxResult ShowDialogOk(string okButton = "OK") {
-			if (!ShowDialog(out var result, 
+			if (!ShowDialog(out var result,
 				(okButton, MessageBoxResult.OK)))
 				result = MessageBoxResult.Cancel;
 			return result;
 		}
 
 		public MessageBoxResult ShowDialogOkCancel(string okButton, string cancelButton = "Cancel") {
-			if (!ShowDialog(out var result, 
+			if (!ShowDialog(out var result,
 					(okButton, MessageBoxResult.OK),
 					(cancelButton, MessageBoxResult.Cancel)))
 				result = MessageBoxResult.Cancel;
@@ -133,7 +133,7 @@ namespace PatchReviewer
 		}
 
 		public MessageBoxResult ShowDialogYesNoCancel(string yesButton, string noButton, string cancelButton = "Cancel") {
-			if (!ShowDialog(out var result, 
+			if (!ShowDialog(out var result,
 					(yesButton, MessageBoxResult.Yes),
 					(noButton, MessageBoxResult.No),
 					(cancelButton, MessageBoxResult.Cancel)))

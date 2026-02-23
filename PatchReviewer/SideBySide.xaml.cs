@@ -153,7 +153,7 @@ namespace PatchReviewer
 				}
 			};
 		}
-		
+
 
 
 		public void SetTitles(string leftTitle, string rightTitle) {
@@ -235,13 +235,13 @@ namespace PatchReviewer
 				lastNode = lastNode.Next;
 			while (lastNode.Next != null && lastNode.Next.SidesEqual)
 				lastNode = lastNode.Next;
-			
+
 			// extract matching from tree
 			var range0 = new LineRange { first = lineTree.IndexOf(firstNode), last = lineTree.IndexOf(lastNode)};
 			var range1 = new LineRange { first = leftTree.IndexOf(firstNode), last = leftTree.IndexOf(lastNode)};
 			var range2 = new LineRange { first = rightTree.IndexOf(firstNode), last = rightTree.IndexOf(lastNode)};
 			var matches = MatchedLineTree.ToMatches(firstNode.To(lastNode), range1.length);
-			
+
 			// create patch
 			var lines1 = leftMatchEditor.GetLines(range0, underlying: true);
 			var lines2 = rightMatchEditor.GetLines(range0, underlying: true);
