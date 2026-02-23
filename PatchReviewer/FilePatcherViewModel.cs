@@ -134,6 +134,7 @@ namespace PatchReviewer
 			set {
 				_resultsModified = value;
 				UpdateModified();
+				OnPropertyChanged(nameof(Status)); // child result statuses may have changed
 			}
 		}
 
