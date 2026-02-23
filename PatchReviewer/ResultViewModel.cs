@@ -1,4 +1,4 @@
-﻿using CodeChicken.DiffPatch;
+using CodeChicken.DiffPatch;
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -9,12 +9,12 @@ namespace PatchReviewer
 	{
 		public FilePatcherViewModel File { get; }
 		private Patcher.Result Result { get; }
-		private readonly int origIndex = 0;
+		public int OrigIndex { get; set; }
 
 		public ResultViewModel(FilePatcherViewModel file, Patcher.Result result, int origIndex) {
 			File = file;
 			Result = result;
-			this.origIndex = origIndex;
+			OrigIndex = origIndex;
 		}
 
 		private Patch _editingPatch;
@@ -101,7 +101,7 @@ namespace PatchReviewer
 
 				_appliedIndex = value;
 
-				int moved = AppliedIndex - origIndex;
+				int moved = AppliedIndex - OrigIndex;
 				MovedPatchCountText = moved > 0 ? $"▼{moved}" : moved < 0 ? $"▲{-moved}" : "";
 				OnPropertyChanged(nameof(MovedPatchCountText));
 			}
@@ -131,6 +131,9 @@ namespace PatchReviewer
 		}
 
 		internal void ConvertRejectedToFailed() {
+			if (Result.mode != Patcher.Mode.EXACT || Result.appliedPatch != null || !Result.success)
+				throw new Exception("Rejected result invariants failed: " + Label);
+
 			Result.success = false; //convert to FAILED
 			OnPropertyChanged(nameof(Status));
 			OnPropertyChanged(nameof(Label));
@@ -138,5 +141,7 @@ namespace PatchReviewer
 			OnPropertyChanged(nameof(LabelWithModifiedIndicator));
 			File.ResultsModified = true;
 		}
+
+		public Patcher.Result RejectedResult => IsRejected ? Result : null;
 	}
 }

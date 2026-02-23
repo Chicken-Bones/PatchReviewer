@@ -55,7 +55,7 @@
             <Button Command="self:Commands.ApprovePatch" ToolTip="Approve Patch (F2)">
                 <Image Source="Images/Accept.png" Style="{StaticResource ImageEnabled}" />
             </Button>
-            <Button Command="self:Commands.RejectPatch" ToolTip="Reject Patch (F3)">
+            <Button x:Name="rejectButton" Command="self:Commands.RejectPatch" ToolTip="Reject Patch (F3)">
                 <Image Source="Images/Delete.png" Style="{StaticResource ImageEnabled}" />
             </Button>
             <Separator/>

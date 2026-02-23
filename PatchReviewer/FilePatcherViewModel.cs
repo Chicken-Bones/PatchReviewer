@@ -1,4 +1,4 @@
-﻿using CodeChicken.DiffPatch;
+using CodeChicken.DiffPatch;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -35,6 +35,7 @@ namespace PatchReviewer
 			Children.IsLiveSorting = true;
 			((INotifyCollectionChanged)Children).CollectionChanged += ResultsMoved;
 
+			fp.results.AddRange(rejectsFile.patches.Select(MakeRejectedResult));
 			UpdateResults();
 		}
 
@@ -63,20 +64,26 @@ namespace PatchReviewer
 
 					newResults.Single().AppliedIndex = e.NewStartingIndex;
 					break;
+				case NotifyCollectionChangedAction.Remove:
+					int removedOrigIndex = e.OldItems.Cast<ResultViewModel>().Single().OrigIndex;
+					foreach (var r in resultsList.Where(r => r.OrigIndex > removedOrigIndex))
+						r.OrigIndex--;
+					int j = e.OldStartingIndex;
+					foreach (var r in resultsList.Skip(j))
+						r.AppliedIndex = j++;
+					break;
 				default:
 					throw new InvalidOperationException(e.Action.ToString());
 			}
 		}
 
+		private static Patcher.Result MakeRejectedResult(Patch p) => new() { patch = p, success = true, mode = Patcher.Mode.EXACT };
+
 		private void UpdateResults() {
 			_results.Clear();
 
-			var allResults = fp.results
-				.Concat(rejectsFile.patches.Select(p => new Patcher.Result { patch = p, success = true, mode = Patcher.Mode.EXACT })) // generate 'successful but not applied' results for rejects
-				.OrderBy(r => r.patch.start1);
-
 			int i = 0;
-			foreach (var r in allResults)
+			foreach (var r in fp.results.OrderBy(r => r.patch.start1))
 				_results.Add(new ResultViewModel(this, r, i++));
 
 			RecalculateOffsets();
@@ -160,15 +167,20 @@ namespace PatchReviewer
 
 		protected void OnPropertyChanged([CallerMemberName] string name = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
-		public void Repatch(IEnumerable<Patch> patches, Patcher.Mode mode) {
+		private void Repatch(IEnumerable<Patch> patches, Patcher.Mode mode, IEnumerable<Patcher.Result> rejects) {
 			var patcher = new Patcher(patches, fp.baseLines);
 			patcher.Patch(mode);
-			fp.results = patcher.Results.ToList();
+			fp.results = patcher.Results.Concat(rejects).ToList();
 			fp.patchedLines = patcher.ResultLines;
-			ResultsModified = patches != fp.patchFile.patches;
 
 			UpdateResults();
 			OnPropertyChanged(nameof(PatchedLines));
+		}
+
+		public void Repatch(IEnumerable<Patch> patches, Patcher.Mode mode) {
+			var rejects = Results.Select(r => r.RejectedResult).Where(r => r != null).ToList();
+			Repatch(patches, mode, rejects);
+			ResultsModified = true;
 		}
 
 		/// <summary>
@@ -207,10 +219,19 @@ namespace PatchReviewer
 		}
 
 		/// <summary>
+		/// Remove a rejected patch entirely
+		/// </summary>
+		public void DeleteRejectedPatch(ResultViewModel result) {
+			_results.Remove(result);
+			ResultsModified = true;
+		}
+
+		/// <summary>
 		/// Abandon all results and start again from the current (saved) patch file
 		/// </summary>
 		public void Repatch() {
-			Repatch(fp.patchFile.patches, Patcher.Mode.FUZZY);
+			Repatch(fp.patchFile.patches, Patcher.Mode.FUZZY, rejectsFile.patches.Select(MakeRejectedResult));
+			ResultsModified = false;
 		}
 
 		// Should be bound to a property change event on children length or position/reordering, but easier to get children to just tell us when they change

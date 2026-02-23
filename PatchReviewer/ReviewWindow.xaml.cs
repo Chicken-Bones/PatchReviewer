@@ -772,17 +772,23 @@ namespace PatchReviewer
 			if (filePanel.CanReDiff)
 				RediffFileEditor();
 
-			if (ApproveUserPatch() != MessageBoxResult.Cancel)
+			bool wasFailed = Result.Status == ResultStatus.FAILED;
+			if (ApproveUserPatch() != MessageBoxResult.Cancel && !wasFailed)
 				AutoSelectNextReviewItem();
 		}
 
 		private void CanExecuteReject(object sender, CanExecuteRoutedEventArgs e) {
-			e.CanExecute = Result != null && !Result.IsRejected;
+			e.CanExecute = Result != null;
+			rejectButton.ToolTip = Result?.IsRejected == true ? "Delete Patch (F3)" : "Reject Patch (F3)";
 		}
 
 		private void ExecuteReject(object sender, ExecutedRoutedEventArgs e) {
-			if (ApproveUserPatch(reject: true) != MessageBoxResult.Cancel)
-				AutoSelectNextReviewItem();
+			if (Result.IsRejected) {
+				File.DeleteRejectedPatch(Result);
+				return;
+			}
+
+			ApproveUserPatch(reject: true);
 		}
 
 		private void CanExecuteRefocusPatch(object sender, CanExecuteRoutedEventArgs e) {
