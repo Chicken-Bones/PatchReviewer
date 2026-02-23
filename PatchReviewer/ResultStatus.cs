@@ -6,6 +6,7 @@
 		BAD,
 		WARNING,
 		GOOD,
+		REJECTED,
 		OFFSET,
 		EXACT,
 	}

@@ -92,11 +92,12 @@
 
 
                     <HierarchicalDataTemplate DataType="{x:Type self:FilePatcherViewModel}" ItemsSource="{Binding Children}">
-                        <TextBlock Text="{Binding LabelWithModifiedIndicator}" Background="{Binding Status, Converter={StaticResource StatusBrushConverter}}"/>
+                        <TextBlock Text="{Binding LabelWithModifiedIndicator}" Background="{Binding Status, Converter={StaticResource StatusBrushConverter}}" Style="{StaticResource StatusForeground}"/>
                     </HierarchicalDataTemplate>
                     <DataTemplate DataType="{x:Type self:ResultViewModel}">
-                        <StackPanel Orientation="Horizontal" 
-                                    Background="{Binding Status, Converter={StaticResource StatusBrushConverter}}">
+                        <StackPanel Orientation="Horizontal"
+                                    Background="{Binding Status, Converter={StaticResource StatusBrushConverter}}"
+                                    Style="{StaticResource StatusForeground}">
                             <TextBlock Text="{Binding MovedPatchCountText}" Width="30"/>
                             <TextBlock Text="{Binding LabelWithModifiedIndicator}"/>
                         </StackPanel>
@@ -107,7 +108,8 @@
 			<DockPanel Grid.Column="2" >
                 <Label Name="titleLabel" DockPanel.Dock="Top" HorizontalContentAlignment="Center" FontFamily="Courier New" FontWeight="Bold" BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}" Margin="2"
                        Content="{Binding Title}"
-                       Background="{Binding Status, Converter={StaticResource StatusBrushConverter}}">
+                       Background="{Binding Status, Converter={StaticResource StatusBrushConverter}}"
+                       Style="{StaticResource StatusForeground}">
                 </Label>
                 <TabControl x:Name="tabControl" SelectionChanged="TabControl_OnSelectionChanged" Padding="0">
                     <TabItem Header="File" x:Name="fileTab">

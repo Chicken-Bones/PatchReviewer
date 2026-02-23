@@ -10,11 +10,20 @@
         <Setter Property="PatchRangeBrush" Value="#000000" />
         <Setter Property="EditRangeBrush" Value="#808080" />
     </Style>
-    <self:StatusBrushConverter x:Key="StatusBrushConverter" 
-                               OffsetPatchBrush="#E0E0E0" 
+    <self:StatusBrushConverter x:Key="StatusBrushConverter"
+                               OffsetPatchBrush="#E0E0E0"
                                GoodPatchBrush="#87CEFA"
                                WarningPatchBrush="#FFA500"
                                BadPatchBrush="#FF4500"
-                               FailPatchBrush="#FF3C3C">
+                               FailPatchBrush="#FF3C3C"
+                               RejectedPatchForeground="#FF0000">
     </self:StatusBrushConverter>
+    <Style x:Key="StatusForeground" TargetType="FrameworkElement">
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding Status, Converter={StaticResource StatusBrushConverter}, ConverterParameter=HasForeground}" Value="True">
+                <Setter Property="TextElement.Foreground"
+                        Value="{Binding Status, Converter={StaticResource StatusBrushConverter}, ConverterParameter=Foreground}"/>
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
 </ResourceDictionary>

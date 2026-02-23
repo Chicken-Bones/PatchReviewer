@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
 
@@ -56,12 +57,24 @@ namespace PatchReviewer
 		public Brush WarningPatchBrush { get; set; }
 		public Brush BadPatchBrush { get; set; }
 		public Brush FailPatchBrush { get; set; }
+		public Brush RejectedPatchForeground { get; set; }
 
 		public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
 			var status = (ResultStatus)value;
 
+			if ("Foreground".Equals(parameter))
+				return ConvertToForeground(status);
+
+			if ("HasForeground".Equals(parameter))
+				return ConvertToForeground(status) != null;
+
+			return ConvertToBackground(status);
+		}
+
+		private object ConvertToBackground(ResultStatus status) {
 			switch (status) {
 				case ResultStatus.EXACT:
+				case ResultStatus.REJECTED:
 					return Brushes.Transparent;
 				case ResultStatus.OFFSET:
 					return OffsetPatchBrush;
@@ -75,6 +88,15 @@ namespace PatchReviewer
 					return FailPatchBrush;
 				default:
 					throw new ArgumentException("ResultStatus: " + status);
+			}
+		}
+
+		private Brush ConvertToForeground(ResultStatus status) {
+			switch (status) {
+				case ResultStatus.REJECTED:
+					return RejectedPatchForeground;
+				default:
+					return null;
 			}
 		}
 

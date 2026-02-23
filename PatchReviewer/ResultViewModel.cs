@@ -54,6 +54,8 @@ namespace PatchReviewer
 			get {
 				if (!Result.success)
 					return ResultStatus.FAILED;
+				if (IsRejected)
+					return ResultStatus.REJECTED;
 				if (Result.mode == Patcher.Mode.FUZZY && Result.fuzzyQuality < 0.5f)
 					return ResultStatus.BAD;
 				if (Result.offsetWarning || Result.mode == Patcher.Mode.FUZZY && Result.fuzzyQuality < 0.85f)
