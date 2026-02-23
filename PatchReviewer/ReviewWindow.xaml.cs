@@ -765,7 +765,7 @@ namespace PatchReviewer
 		}
 
 		private void CanExecuteApprove(object sender, CanExecuteRoutedEventArgs e) {
-			e.CanExecute = Result != null && !CanRediff && (Result.Status != ResultStatus.EXACT || Result.ModifiedInEditor);
+			e.CanExecute = Result != null && !CanRediff && !Result.IsRejected && (Result.Status != ResultStatus.EXACT || Result.ModifiedInEditor);
 		}
 
 		private void ExecuteApprove(object sender, ExecutedRoutedEventArgs e) {
