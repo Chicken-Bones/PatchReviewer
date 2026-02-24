@@ -316,10 +316,9 @@ namespace PatchReviewer
 			else
 				filePanel.ClearRangeMarkers();
 
-			if (p == null) { //removed or failed, just show an offset hint
+			if (p == null) { // failed, show the original patch with offset hint
 				p = new Patch(Result.OriginalPatch);
 				p.start2 += Result.SearchOffset;
-				p.diffs.Clear();
 			}
 
 			patchPanel.LoadDiff(
