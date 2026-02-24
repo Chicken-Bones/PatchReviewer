@@ -202,6 +202,14 @@ namespace PatchReviewer
 
 		public void ReDiff() => LoadDiff(leftMatchEditor.UnderlyingLines, rightMatchEditor.UnderlyingLines, underlyingChange: false);
 
+		public int? GetUnderlyingLine(bool isRight, int editorLine) {
+			var lineTree = leftMatchEditor.LineTree;
+			if (lineTree == null || editorLine < 1 || editorLine > lineTree.Count) return null;
+			var node = lineTree[editorLine - 1];
+			if (!node.HasLine(isRight)) return null;
+			return lineTree.Access(isRight).IndexOf(node);
+		}
+
 		public List<Patch> Diff() {
 			var lineTree = rightMatchEditor.LineTree;
 			var lines1 = leftMatchEditor.UnderlyingLines;

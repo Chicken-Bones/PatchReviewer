@@ -43,6 +43,7 @@ namespace PatchReviewer
 		private LineRange leftEditRange, rightEditRange;
 
 		private bool editorsInSync;
+		private bool suppressScrollToMarked;
 		//private Patch userPatch;
 
 		public ReviewWindow(IEnumerable<FilePatcher> files, string commonBasePath = null) {
@@ -236,7 +237,8 @@ namespace PatchReviewer
 
 				Result.ModifiedInEditor = false;
 				SetEditingPatch(Result.AppliedPatch);
-				filePanel.ScrollToMarked();
+				if (!suppressScrollToMarked)
+					filePanel.ScrollToMarked();
 			}
 		}
 
@@ -802,9 +804,36 @@ namespace PatchReviewer
 		}
 
 		private void FilePanel_OnMouseDown(object sender, MouseButtonEventArgs e) {
-			if (e.ChangedButton == MouseButton.Middle && Result != null) {
+			if (e.ChangedButton == MouseButton.XButton1 && Result != null) {
 				filePanel.ScrollToMarked();
 				e.Handled = true;
+			}
+
+			if (e.ChangedButton == MouseButton.Middle && Result != null) {
+				TryFocusPatchUnderCursor();
+				e.Handled = true;
+			}
+		}
+
+		private void TryFocusPatchUnderCursor() {
+			var (isRight, editor) =
+				filePanel.right.editor.IsMouseOver ? (true, filePanel.right.editor) :
+				filePanel.left.editor.IsMouseOver ? (false, filePanel.left.editor) :
+				default;
+
+			if (editor == null) return;
+
+			if (editor.GetPositionFromPoint(Mouse.GetPosition(editor)) is not { } position) return;
+
+			// Convert editor line to underlying line number
+			if (filePanel.GetUnderlyingLine(isRight, position.Line) is not int line) return;
+
+			// Find a result with a patch containing this line
+			var match = File.Results.FirstOrDefault(r => r.ViewPatch != null && (isRight ? r.Range2 : r.Range1).Contains(line));
+			if (match != null) {
+				suppressScrollToMarked = true;
+				Select(match);
+				suppressScrollToMarked = false;
 			}
 		}
 

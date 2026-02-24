@@ -58,6 +58,8 @@ namespace PatchReviewer
 		public int Start2 => ViewPatch.start2;
 		public int End1 => Start1 + (ViewPatch ?? OriginalPatch).length1;
 		public int End2 => Start2 + ViewPatch.length2;
+		public LineRange Range1 => new LineRange { start = Start1, end = End1 };
+		public LineRange Range2 => new LineRange { start = Start2, end = End2 };
 		public int SearchOffset => Result.searchOffset;
 
 		// should be a 'friend method' of FilePatcherViewModel
