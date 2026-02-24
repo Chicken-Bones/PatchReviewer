@@ -590,13 +590,6 @@ namespace PatchReviewer
 			return choice;
 		}
 
-		// Feature disabled
-		/*private void RepatchFile() {
-			var patches = File.results.Where(r => !IsRemoved(r)).Select(r => r.success ? r.appliedPatch : r.patch);
-			Repatch(patches, Patcher.Mode.OFFSET);
-			modifiedFiles.Add(File);
-		}*/
-
 		private void SaveFile()
 		{
 			if (File.ResultsAreValuable) {
@@ -711,27 +704,18 @@ namespace PatchReviewer
 			RediffFile();
 		}
 
-		private void CanExecuteRepatchFile(object sender, CanExecuteRoutedEventArgs e) {
-			e.CanExecute = true;
+		private void CanExecuteRetryOriginalPatch(object sender, CanExecuteRoutedEventArgs e) {
+			e.CanExecute = Result != null;
 		}
 
-		private void ExecuteRepatchFile(object sender, ExecutedRoutedEventArgs e) {
-			new CustomMessageBox {
-				Title = "Feature Disabled",
-				Message = "Feature is probably redundant. Consider saving instead."
-			}.ShowDialogOk("Cancel");
-
-			/*if (FilePatcherViewModel.ResultsAreValuable) {
-				var choice = new CustomMessageBox {
-					Title = "Unapproved Patch Results",
-					Message = "Are you sure you want to approve all patch results and repatch the file?"
-				}.ShowDialogOkCancel("Approve All");
-
-				if (choice == MessageBoxResult.Cancel)
-					return;
+		private void ExecuteRetryOriginalPatch(object sender, ExecutedRoutedEventArgs e) {
+			if (Result?.IsRejected ?? false) {
+				ExecuteRevert(sender, e);
+				return;
 			}
 
-			RepatchFile();*/
+			SetEditingPatch(null);
+			TryReapplyEditingPatch(new Patch(Result.OriginalPatch), showPrompts: true);
 		}
 
 		private void CanExecuteRediff(object sender, CanExecuteRoutedEventArgs e) {
@@ -758,10 +742,8 @@ namespace PatchReviewer
 		private void ExecuteRevert(object sender, ExecutedRoutedEventArgs e) {
 			if (Result?.IsRejected ?? false) {
 				Result.ConvertRejectedToFailed();
+				ReloadEditingPatch();
 				TryReapplyEditingPatch(new Patch(Result.OriginalPatch), showPrompts: false);
-				if (Result.EditingPatch == null)
-					ReloadEditingPatch(); // reapply failed, load the patch pane instead
-
 				return;
 			}
 

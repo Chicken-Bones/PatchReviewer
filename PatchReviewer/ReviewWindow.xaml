@@ -15,11 +15,11 @@
     <Window.CommandBindings>
         <CommandBinding Command="Save" CanExecute="CanExecuteSave" Executed="ExecuteSave"></CommandBinding>
         <CommandBinding Command="self:Commands.Reload" CanExecute="CanExecuteReloadFile" Executed="ExecuteReloadFile"></CommandBinding>
-        <CommandBinding Command="self:Commands.RepatchFile" CanExecute="CanExecuteRepatchFile" Executed="ExecuteRepatchFile"></CommandBinding>
         <CommandBinding Command="self:Commands.RediffFile" CanExecute="CanExecuteRediffFile" Executed="ExecuteRediffFile"></CommandBinding>
         <CommandBinding Command="self:Commands.NextDiff" CanExecute="CanExecuteNextReviewItem" Executed="ExecuteNextReviewItem"></CommandBinding>
         <CommandBinding Command="self:Commands.PrevDiff" CanExecute="CanExecutePrevReviewItem" Executed="ExecutePrevReviewItem"></CommandBinding>
         <CommandBinding Command="self:Commands.RefocusPatch" CanExecute="CanExecuteRefocusPatch" Executed="ExecuteRefocusPatch"></CommandBinding>
+        <CommandBinding Command="self:Commands.RetryOriginalPatch" CanExecute="CanExecuteRetryOriginalPatch" Executed="ExecuteRetryOriginalPatch"></CommandBinding>
         <CommandBinding Command="self:Commands.Rediff" CanExecute="CanExecuteRediff" Executed="ExecuteRediff"></CommandBinding>
         <CommandBinding Command="self:Commands.Revert" CanExecute="CanExecuteRevert" Executed="ExecuteRevert"></CommandBinding>
         <CommandBinding Command="self:Commands.ApprovePatch" CanExecute="CanExecuteApprove" Executed="ExecuteApprove"></CommandBinding>
@@ -35,9 +35,6 @@
                 <Image Source="Images/Reload.png" Style="{StaticResource ImageEnabled}" />
             </Button>
             <Separator/>
-            <Button Command="self:Commands.RepatchFile" ToolTip="Repatch File">
-                <Image Source="Images/Patch.png" Style="{StaticResource ImageEnabled}" />
-            </Button>
             <Button Command="self:Commands.RediffFile" ToolTip="Rediff File">
                 <Image Source="Images/Compare.png" Style="{StaticResource ImageEnabled}" />
             </Button>
@@ -59,6 +56,9 @@
                 <Image Source="Images/Delete.png" Style="{StaticResource ImageEnabled}" />
             </Button>
             <Separator/>
+            <Button Command="self:Commands.RetryOriginalPatch" ToolTip="Retry Original Patch (F4)">
+                <Image Source="Images/Patch.png" Style="{StaticResource ImageEnabled}" />
+            </Button>
             <Button Command="self:Commands.Rediff" ToolTip="Recalculate Diff (F5)">
                 <Image Source="Images/Refresh.png" Style="{StaticResource ImageEnabled}" />
             </Button>

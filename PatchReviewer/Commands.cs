@@ -1,4 +1,4 @@
-﻿using System.Windows.Input;
+using System.Windows.Input;
 
 namespace PatchReviewer
 {
@@ -6,7 +6,6 @@ namespace PatchReviewer
 	{
 		public static readonly RoutedUICommand Reload = new RoutedUICommand("Reload File (Revert All)", "Reload", typeof(ReviewWindow));
 
-		public static readonly RoutedUICommand RepatchFile = new RoutedUICommand("Reapply Patches", "RepatchFile", typeof(ReviewWindow));
 		public static readonly RoutedUICommand RediffFile = new RoutedUICommand("Reapply Diffs", "RediffFile", typeof(ReviewWindow));
 
 		public static readonly RoutedUICommand NextDiff = new RoutedUICommand("Next Diff", "NextDiff", typeof(ReviewWindow),
@@ -19,6 +18,11 @@ namespace PatchReviewer
 					new KeyGesture(Key.Up, ModifierKeys.Alt)
 				});
 
+		public static readonly RoutedUICommand RefocusPatch = new RoutedUICommand("Refocus Patch", "RefocusPatch", typeof(ReviewWindow),
+			new InputGestureCollection {
+				new KeyGesture(Key.Left, ModifierKeys.Alt)
+			});
+
 		public static readonly RoutedUICommand ApprovePatch = new RoutedUICommand("Approve Patch", "ApprovePatch", typeof(ReviewWindow),
 			new InputGestureCollection {
 				new KeyGesture(Key.F2)
@@ -28,6 +32,10 @@ namespace PatchReviewer
 				new KeyGesture(Key.F3)
 			});
 
+		public static readonly RoutedUICommand RetryOriginalPatch = new RoutedUICommand("Retry Original Patch", "RetryOriginalPatch", typeof(ReviewWindow),
+			new InputGestureCollection {
+				new KeyGesture(Key.F4)
+			});
 		public static readonly RoutedUICommand Rediff = new RoutedUICommand("Recalculate Diff", "Rediff", typeof(ReviewWindow),
 			new InputGestureCollection {
 				new KeyGesture(Key.F5)
@@ -35,11 +43,6 @@ namespace PatchReviewer
 		public static readonly RoutedUICommand Revert = new RoutedUICommand("Revert", "Revert", typeof(ReviewWindow),
 			new InputGestureCollection {
 				new KeyGesture(Key.R, ModifierKeys.Control)
-			});
-
-		public static readonly RoutedUICommand RefocusPatch = new RoutedUICommand("Refocus Patch", "RefocusPatch", typeof(ReviewWindow),
-			new InputGestureCollection {
-				new KeyGesture(Key.Left, ModifierKeys.Alt)
 			});
 	}
 }
