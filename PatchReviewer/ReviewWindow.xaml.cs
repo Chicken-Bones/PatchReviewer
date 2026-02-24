@@ -235,9 +235,7 @@ namespace PatchReviewer
 				patchTab.Visibility = Visibility.Visible;
 
 				Result.ModifiedInEditor = false;
-				Result.EditingPatch = Result.AppliedPatch;
-				ReloadEditingPatch();
-				ReCalculateEditRange();
+				SetEditingPatch(Result.AppliedPatch);
 				filePanel.ScrollToMarked();
 			}
 		}
@@ -299,7 +297,13 @@ namespace PatchReviewer
 			}
 		}
 
-		private void ReloadEditingPatch(bool soft = false) {
+		private void SetEditingPatch(Patch patch) {
+			Result.EditingPatch = patch;
+			ReloadEditingPatch();
+			ReCalculateEditRange();
+		}
+
+		private void ReloadEditingPatch() {
 			//mark patch ranges
 			var p = Result.EditingPatch;
 			if (p != null)
@@ -318,17 +322,12 @@ namespace PatchReviewer
 				p.diffs.Clear();
 			}
 
-			if (soft) {
-				patchPanel.ReplaceEditedLines(p.ToString().GetLines());
-			}
-			else {
-				patchPanel.LoadDiff(
-					Result.OriginalPatch.ToString().GetLines(),
-					p.ToString().GetLines());
+			patchPanel.LoadDiff(
+				Result.OriginalPatch.ToString().GetLines(),
+				p.ToString().GetLines());
 
-				patchPanel.right.Title = $"{(Result.Status == ResultStatus.FAILED ? "Failed" : "Applied")} Patch";
-				patchPanel.right.Visibility = Result.IsRejected ? Visibility.Hidden : Visibility.Visible;
-			}
+			patchPanel.right.Title = $"{(Result.Status == ResultStatus.FAILED ? "Failed" : "Applied")} Patch";
+			patchPanel.right.Visibility = Result.IsRejected ? Visibility.Hidden : Visibility.Visible;
 
 			editorsInSync = true;
 		}
@@ -345,14 +344,12 @@ namespace PatchReviewer
 
 			//recalculate user patch
 			try {
-				Result.EditingPatch = filePanel.DiffEditableRange();
+				SetEditingPatch(filePanel.DiffEditableRange());
 			}
 			catch (InvalidOperationException e) {
 				MessageBox.Show(this, e.Message, "Rediff Failed", MessageBoxButton.OK, MessageBoxImage.Error);
 				return;
 			}
-
-			ReloadEditingPatch();
 		}
 
 		private IEnumerable<string> PatchedLinesExcludingCurrentResult =>
@@ -453,10 +450,8 @@ namespace PatchReviewer
 			if (msgBox != null && msgBox.ShowDialogOkCancel("Load") == MessageBoxResult.Cancel)
 				return;
 
-			Result.EditingPatch = p;
 			filePanel.LoadDiff(File.BaseLines, patcher.ResultLines, underlyingChange: true, original: false);
-			ReloadEditingPatch(r.mode != Patcher.Mode.FUZZY);
-			ReCalculateEditRange();
+			SetEditingPatch(p);
 			filePanel.ScrollToMarked();
 		}
 
