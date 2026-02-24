@@ -297,8 +297,9 @@ namespace PatchReviewer
 			}
 		}
 
-		private void SetEditingPatch(Patch patch) {
+		private void SetEditingPatch(Patch patch, Patcher.Result repatchResult = null) {
 			Result.EditingPatch = patch;
+			Result.EditingRepatchResult = repatchResult;
 			ReloadEditingPatch();
 			ReCalculateEditRange();
 		}
@@ -450,7 +451,7 @@ namespace PatchReviewer
 				return;
 
 			filePanel.LoadDiff(File.BaseLines, patcher.ResultLines, underlyingChange: true, original: false);
-			SetEditingPatch(p);
+			SetEditingPatch(p, r);
 			filePanel.ScrollToMarked();
 		}
 

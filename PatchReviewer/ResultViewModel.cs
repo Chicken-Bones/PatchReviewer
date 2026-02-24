@@ -23,6 +23,7 @@ namespace PatchReviewer
 			set {
 				var start1 = Start1;
 				_editingPatch = value;
+				EditingRepatchResult = null;
 
 				if (start1 != Start1)
 					OnPropertyChanged(nameof(Start1));
@@ -31,11 +32,31 @@ namespace PatchReviewer
 			}
 		}
 
+		private Patcher.Result _editingRepatchResult;
+		public Patcher.Result EditingRepatchResult {
+			get => _editingRepatchResult;
+			set {
+				if (_editingRepatchResult == value)
+					return;
+
+				if (value != null) {
+					if (!value.success)
+						throw new ArgumentException($"{nameof(EditingRepatchResult)} must be success");
+					if (!string.Join("", value.appliedPatch.diffs).Equals(string.Join("", EditingPatch.diffs)))
+						throw new ArgumentException($"{nameof(EditingRepatchResult)} must be an application of the editing patch");
+				}
+
+				_editingRepatchResult = value;
+				OnLabelPropertiesChanged();
+			}
+		}
+
+
 		public Patch ViewPatch => EditingPatch ?? AppliedPatch;
 
-		public int Start1 => ViewPatch?.start1 ?? (Result.patch.start1 + Result.searchOffset);
+		public int Start1 => ViewPatch?.start1 ?? (OriginalPatch.start1 + SearchOffset);
 		public int Start2 => ViewPatch.start2;
-		public int End1 => Start1 + (ViewPatch ?? Result.patch).length1;
+		public int End1 => Start1 + (ViewPatch ?? OriginalPatch).length1;
 		public int End2 => Start2 + ViewPatch.length2;
 		public int SearchOffset => Result.searchOffset;
 
@@ -50,19 +71,21 @@ namespace PatchReviewer
 
 		public bool IsRejected => Result.success && AppliedPatch == null;
 
+		private Patcher.Result StatusResult => EditingRepatchResult ?? Result;
 		public ResultStatus Status {
 			get {
-				if (!Result.success)
+				var r = StatusResult;
+				if (!r.success)
 					return ResultStatus.FAILED;
 				if (IsRejected)
 					return ResultStatus.REJECTED;
-				if (Result.mode == Patcher.Mode.FUZZY && Result.fuzzyQuality < 0.5f)
+				if (r.mode == Patcher.Mode.FUZZY && r.fuzzyQuality < 0.5f)
 					return ResultStatus.BAD;
-				if (Result.offsetWarning || Result.mode == Patcher.Mode.FUZZY && Result.fuzzyQuality < 0.85f)
+				if (r.offsetWarning || r.mode == Patcher.Mode.FUZZY && r.fuzzyQuality < 0.85f)
 					return ResultStatus.WARNING;
-				if (Result.mode == Patcher.Mode.FUZZY)
+				if (r.mode == Patcher.Mode.FUZZY)
 					return ResultStatus.GOOD;
-				if (Result.mode == Patcher.Mode.OFFSET)
+				if (r.mode == Patcher.Mode.OFFSET)
 					return ResultStatus.OFFSET;
 				return ResultStatus.EXACT;
 			}
@@ -92,7 +115,7 @@ namespace PatchReviewer
 
 		public string LabelWithModifiedIndicator => Label + (ModifiedInEditor ? " *" : "");
 
-		public string Label => IsRejected ? $"REJECTED: {Result.patch.Header}" : Result.Summary();
+		public string Label => IsRejected ? $"REJECTED: {OriginalPatch.Header}" : StatusResult.Summary();
 		public string Title => $"{File.Label} {Label}";
 
 		public string MovedPatchCountText { get; private set; } = "";
@@ -125,11 +148,7 @@ namespace PatchReviewer
 
 			ModifiedInEditor = false;
 			OnPropertyChanged(nameof(Start1)); // trigger reordering in the collection view
-			OnPropertyChanged(nameof(Status));
-			OnPropertyChanged(nameof(Label));
-			OnPropertyChanged(nameof(LabelWithModifiedIndicator));
-			OnPropertyChanged(nameof(Title));
-
+			OnLabelPropertiesChanged();
 			File.ResultsModified = true;
 		}
 
@@ -138,11 +157,16 @@ namespace PatchReviewer
 				throw new Exception("Rejected result invariants failed: " + Label);
 
 			Result.success = false; //convert to FAILED
+			OnLabelPropertiesChanged();
+			File.ResultsModified = true;
+		}
+
+		private void OnLabelPropertiesChanged()
+		{
 			OnPropertyChanged(nameof(Status));
 			OnPropertyChanged(nameof(Label));
-			OnPropertyChanged(nameof(Title));
 			OnPropertyChanged(nameof(LabelWithModifiedIndicator));
-			File.ResultsModified = true;
+			OnPropertyChanged(nameof(Title));
 		}
 
 		public Patcher.Result RejectedResult => IsRejected ? Result : null;
