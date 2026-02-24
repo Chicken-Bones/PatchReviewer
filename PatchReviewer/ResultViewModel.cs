@@ -42,7 +42,7 @@ namespace PatchReviewer
 		// FilePatcherViewModel is responsible for making sure that Start1 and Start2 actually line up with the patch list
 		public void MoveTo(int start2) {
 			if (Result.appliedPatch == null)
-				throw new NullReferenceException(nameof(Result.appliedPatch));
+				return;
 
 			Result.appliedPatch.start2 = start2;
 			OnPropertyChanged(nameof(Start2));
