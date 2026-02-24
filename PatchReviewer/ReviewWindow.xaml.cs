@@ -360,18 +360,22 @@ namespace PatchReviewer
 		private void RediffPatchEditor() {
 			patchPanel.ReDiff();
 			editorsInSync = false;
+			if (FormatAssistEditedPatchPanel() is { } p)
+				TryReapplyEditingPatch(p, showPrompts: true);
+		}
 
-			var p = FormatAssistEditedPatchPanel();
-			if (p == null)
-				return;
+		private void TryReapplyEditingPatch(Patch p, bool showPrompts) {
 
 			//offset given other patches are already applied
 			p.start1 += rightEditRange.start - leftEditRange.start;
 
-			var patcher = new Patcher(new[] {p}, PatchedLinesExcludingCurrentResult);
+			var patcher = new Patcher([p], PatchedLinesExcludingCurrentResult);
 			patcher.Patch(Patcher.Mode.FUZZY);
 
 			var r = patcher.Results.Single();
+			if (!r.success && !showPrompts)
+				return;
+
 			if (!r.success) {
 				new CustomMessageBox {
 					Title = "Patch Failed",
@@ -414,29 +418,29 @@ namespace PatchReviewer
 			}
 
 			if (keepoutRanges.Any(range => range.Contains(appliedRange))) {
-				new CustomMessageBox {
-					Title = "Patch Failed",
-					Message = $"Patch applied ({r.mode}) inside another patch {appliedRange}",
-					Image = MessageBoxImage.Error
-				}.ShowDialogOk("Ignore");
+				if (showPrompts) {
+					new CustomMessageBox {
+						Title = "Patch Failed",
+						Message = $"Patch applied ({r.mode}) inside another patch {appliedRange}",
+						Image = MessageBoxImage.Error
+					}.ShowDialogOk("Ignore");
+				}
 
 				return;
 			}
 
 			CustomMessageBox msgBox = null;
-			if (!new LineRange { start = rightEditRange.start, length = leftEditRange.length}.Contains(appliedRange)) {
-				// don't show the message if we're just locating a failed patch
-				if (Result.EditingPatch != null) {
-					int patchesMoved = File.Results.TakeWhile(r => r.Start1 < p.start1).Count() - Result.AppliedIndex;
-					int linesMoved = p.start1 - Result.Start1;
+			// show moved patch message if we're not locating a failed patch
+			if (!new LineRange { start = rightEditRange.start, length = leftEditRange.length}.Contains(appliedRange) && Result.EditingPatch != null) {
+				int patchesMoved = File.Results.TakeWhile(r => r.Start1 < p.start1).Count() - Result.AppliedIndex;
+				int linesMoved = p.start1 - Result.Start1;
 
-					msgBox = new CustomMessageBox {
-						Title = "Moved Patch",
-						Message = $"Patch has been moved {(patchesMoved > 0 ? "Down" : "Up")} {Math.Abs(patchesMoved)} patches and {Math.Abs(linesMoved)} lines." +
-						$"\nLoad assisted patch?",
-						Image = MessageBoxImage.Question
-					};
-				}
+				msgBox = new CustomMessageBox {
+					Title = "Moved Patch",
+					Message = $"Patch has been moved {(patchesMoved > 0 ? "Down" : "Up")} {Math.Abs(patchesMoved)} patches and {Math.Abs(linesMoved)} lines." +
+					$"\nLoad assisted patch?",
+					Image = MessageBoxImage.Question
+				};
 			}
 			if (r.mode == Patcher.Mode.FUZZY) {
 				msgBox ??= new CustomMessageBox {
@@ -447,7 +451,7 @@ namespace PatchReviewer
 				msgBox.Message += $" (Quality { (int)(r.fuzzyQuality * 100)})";
 			}
 
-			if (msgBox != null && msgBox.ShowDialogOkCancel("Load") == MessageBoxResult.Cancel)
+			if (showPrompts && msgBox != null && msgBox.ShowDialogOkCancel("Load") == MessageBoxResult.Cancel)
 				return;
 
 			filePanel.LoadDiff(File.BaseLines, patcher.ResultLines, underlyingChange: true, original: false);
@@ -750,8 +754,14 @@ namespace PatchReviewer
 		}
 
 		private void ExecuteRevert(object sender, ExecutedRoutedEventArgs e) {
-			if (Result?.IsRejected ?? false)
+			if (Result?.IsRejected ?? false) {
 				Result.ConvertRejectedToFailed();
+				TryReapplyEditingPatch(new Patch(Result.OriginalPatch), showPrompts: false);
+				if (Result.EditingPatch == null)
+					ReloadEditingPatch(); // reapply failed, load the patch pane instead
+
+				return;
+			}
 
 			ReloadPanes(File, Result, linesChanged: true);
 		}
