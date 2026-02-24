@@ -71,7 +71,7 @@ namespace PatchReviewer
 		// shouldn't slow things down much, and worth offering some 'immutability'
 		public Patch OriginalPatch => Result.patch;
 		public Patch AppliedPatch => Result.appliedPatch;
-		public Patch ApprovedPatch => Status >= ResultStatus.OFFSET ? AppliedPatch : OriginalPatch;
+		public Patch ApprovedPatch => Status >= ResultStatus.REJECTED ? AppliedPatch : OriginalPatch;
 
 		private bool _modifiedInEditor;
 		public bool ModifiedInEditor {

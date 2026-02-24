@@ -154,7 +154,7 @@ namespace PatchReviewer
 
 		public ResultStatus Status => _results.Count == 0 ? ResultStatus.EXACT : Results.Select(r => r.Status).Min();
 
-		public bool ResultsAreValuable => Status < ResultStatus.OFFSET;
+		public bool ResultsAreValuable => Status < ResultStatus.REJECTED;
 
 		public event PropertyChangedEventHandler PropertyChanged;
 
