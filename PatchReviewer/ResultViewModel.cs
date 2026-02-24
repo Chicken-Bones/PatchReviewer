@@ -26,11 +26,12 @@ namespace PatchReviewer
 
 				if (start1 != Start1)
 					OnPropertyChanged(nameof(Start1));
+
+				OnPropertyChanged(nameof(ViewPatch));
 			}
 		}
 
-		// Patch which is active in the editor
-		public Patch ViewPatch => EditingPatch ?? Result.appliedPatch;
+		public Patch ViewPatch => EditingPatch ?? AppliedPatch;
 
 		public int Start1 => ViewPatch?.start1 ?? (Result.patch.start1 + Result.searchOffset);
 		public int Start2 => ViewPatch.start2;
@@ -39,16 +40,15 @@ namespace PatchReviewer
 		public int SearchOffset => Result.searchOffset;
 
 		// should be a 'friend method' of FilePatcherViewModel
-		// FilePatcherViewModel is responsible for making sure that Start1 and Start2 actually line up with the patch list
-		public void MoveTo(int start2) {
-			if (Result.appliedPatch == null)
+		public void UpdateOffset(Patch prevPatch) {
+			if (AppliedPatch is not { } p)
 				return;
 
-			Result.appliedPatch.start2 = start2;
-			OnPropertyChanged(nameof(Start2));
+			var offset = prevPatch == null ? 0 : prevPatch.start2 - prevPatch.start1 + prevPatch.length2 - prevPatch.length1;
+			p.start2 = p.start1 + offset;
 		}
 
-		public bool IsRejected => Result.success && Result.appliedPatch == null;
+		public bool IsRejected => Result.success && AppliedPatch == null;
 
 		public ResultStatus Status {
 			get {
@@ -68,9 +68,14 @@ namespace PatchReviewer
 			}
 		}
 
-		// shouldn't slow things down much, and worth offering some 'immutability'
 		public Patch OriginalPatch => Result.patch;
-		public Patch AppliedPatch => Result.appliedPatch;
+		public Patch AppliedPatch {
+			get => Result.appliedPatch;
+			set {
+				Result.appliedPatch = value;
+				OnPropertyChanged(nameof(ViewPatch));
+			}
+		}
 		public Patch ApprovedPatch => Status >= ResultStatus.REJECTED ? AppliedPatch : OriginalPatch;
 
 		private bool _modifiedInEditor;
@@ -116,22 +121,20 @@ namespace PatchReviewer
 			Result.success = true;
 			Result.mode = Patcher.Mode.EXACT;
 			Result.offsetWarning = false;
-			Result.appliedPatch = EditingPatch;
+			AppliedPatch = EditingPatch;
 
 			ModifiedInEditor = false;
-			// trigger reordering in the collection view
-			OnPropertyChanged(nameof(Start1));
+			OnPropertyChanged(nameof(Start1)); // trigger reordering in the collection view
 			OnPropertyChanged(nameof(Status));
 			OnPropertyChanged(nameof(Label));
 			OnPropertyChanged(nameof(LabelWithModifiedIndicator));
 			OnPropertyChanged(nameof(Title));
 
 			File.ResultsModified = true;
-			File.RecalculateOffsets();
 		}
 
 		internal void ConvertRejectedToFailed() {
-			if (Result.mode != Patcher.Mode.EXACT || Result.appliedPatch != null || !Result.success)
+			if (Result.mode != Patcher.Mode.EXACT || AppliedPatch != null || !Result.success)
 				throw new Exception("Rejected result invariants failed: " + Label);
 
 			Result.success = false; //convert to FAILED

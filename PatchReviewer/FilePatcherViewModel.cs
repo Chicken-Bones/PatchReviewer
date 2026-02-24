@@ -1,14 +1,15 @@
 using CodeChicken.DiffPatch;
+using DynamicData;
+using DynamicData.Binding;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Reflection;
+using System.Reactive;
+using System.Reactive.Linq;
 using System.Runtime.CompilerServices;
-using System.Windows.Data;
 
 namespace PatchReviewer
 {
@@ -30,51 +31,18 @@ namespace PatchReviewer
 				label = label.Substring(commonBasePath.Length);
 			Label = label;
 
-			Children = (ListCollectionView)CollectionViewSource.GetDefaultView(_results);
-			Children.SortDescriptions.Add(new SortDescription { PropertyName = nameof(ResultViewModel.Start1), Direction = ListSortDirection.Ascending });
-			Children.IsLiveSorting = true;
-			((INotifyCollectionChanged)Children).CollectionChanged += ResultsMoved;
+			var changes = _results.Connect();
+			changes
+				.Sort(SortExpressionComparer<ResultViewModel>.Ascending(x => x.Start1), resort: changes.WhenPropertyChanged(x => x.Start1).Select(_ => Unit.Default))
+				.Bind(out _sortedResults)
+				.Subscribe(_ => RecalculateOffsets());
+
+			changes
+				.WhenPropertyChanged(x => x.ViewPatch)
+				.Subscribe(_ => RecalculateOffsets());
 
 			fp.results.AddRange(rejectsFile.patches.Select(MakeRejectedResult));
 			UpdateResults();
-		}
-
-		private void ResultsMoved(object sender, NotifyCollectionChangedEventArgs e) {
-			if (e.Action == NotifyCollectionChangedAction.Reset)
-				return;
-
-			var resultsList = ((System.Collections.IEnumerable)sender).Cast<ResultViewModel>();
-			var newResults = e.NewItems?.Cast<ResultViewModel>();
-			switch (e.Action) {
-				case NotifyCollectionChangedAction.Add:
-					int i = e.NewStartingIndex;
-					foreach (var r in newResults)
-						r.AppliedIndex = i++;
-					foreach (var r in resultsList.Skip(i))
-						r.AppliedIndex = i++;
-					break;
-				case NotifyCollectionChangedAction.Move:
-					if (e.OldItems.Count != 1 || e.NewItems.Count != 1)
-						throw new Exception("Multiple items moved simultaneously?");
-
-					foreach (var r in resultsList.Skip(e.OldStartingIndex).Take(e.NewStartingIndex-e.OldStartingIndex))
-						r.AppliedIndex--;
-					foreach (var r in resultsList.Skip(e.NewStartingIndex+1).Take(e.OldStartingIndex-e.NewStartingIndex))
-						r.AppliedIndex++;
-
-					newResults.Single().AppliedIndex = e.NewStartingIndex;
-					break;
-				case NotifyCollectionChangedAction.Remove:
-					int removedOrigIndex = e.OldItems.Cast<ResultViewModel>().Single().OrigIndex;
-					foreach (var r in resultsList.Where(r => r.OrigIndex > removedOrigIndex))
-						r.OrigIndex--;
-					int j = e.OldStartingIndex;
-					foreach (var r in resultsList.Skip(j))
-						r.AppliedIndex = j++;
-					break;
-				default:
-					throw new InvalidOperationException(e.Action.ToString());
-			}
 		}
 
 		private static Patcher.Result MakeRejectedResult(Patch p) => new() { patch = p, success = true, mode = Patcher.Mode.EXACT };
@@ -83,29 +51,19 @@ namespace PatchReviewer
 			_results.Clear();
 
 			int i = 0;
-			foreach (var r in fp.results.OrderBy(r => r.patch.start1))
-				_results.Add(new ResultViewModel(this, r, i++));
-
-			RecalculateOffsets();
+			_results.AddRange(fp.results
+				.OrderBy(r => r.patch.start1)
+				.Select(r => new ResultViewModel(this, r, i++))
+			);
 		}
 
 		public string Label { get; }
 		public string Title => Label;
 
-		private ObservableCollection<ResultViewModel> _results = new ObservableCollection<ResultViewModel>();
+		private SourceList<ResultViewModel> _results = new SourceList<ResultViewModel>();
 
-		public ListCollectionView Children { get; }
-
-		private static MethodInfo _restoreLiveShapingNow = typeof(ListCollectionView).GetMethod("RestoreLiveShaping", (BindingFlags)(-1));
-		private static MethodInfo _isLiveShapingDirty = typeof(ListCollectionView).GetProperty("IsLiveShapingDirty", (BindingFlags)(-1)).GetGetMethod(nonPublic: true);
-		public IEnumerable<ResultViewModel> Results {
-			get {
-				if ((bool)_isLiveShapingDirty.Invoke(Children, null))
-					_restoreLiveShapingNow.Invoke(Children, null);
-
-				return Children.Cast<ResultViewModel>();
-			}
-		}
+		private ReadOnlyObservableCollection<ResultViewModel> _sortedResults;
+		public ReadOnlyObservableCollection<ResultViewModel> Results => _sortedResults;
 
 		private bool _modified;
 		public bool IsModified {
@@ -234,14 +192,16 @@ namespace PatchReviewer
 			ResultsModified = false;
 		}
 
-		// Should be bound to a property change event on children length or position/reordering, but easier to get children to just tell us when they change
+		// Bound to collection changes (via Sort pipeline) and ViewPatch property changes on children
 		public void RecalculateOffsets() {
-			int delta = 0;
+			Patch lastApplied = null;
+			int i = 0;
 			foreach (var r in Results) {
-				var p = r.ViewPatch;
-				if (p != null) {
-					r.MoveTo(p.start1 + delta);
-					delta += p.length2 - p.length1;
+				r.AppliedIndex = i++;
+
+				if (r.ViewPatch != null) {
+					r.UpdateOffset(lastApplied);
+					lastApplied = r.ViewPatch;
 				}
 			}
 		}

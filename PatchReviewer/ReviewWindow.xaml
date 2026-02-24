@@ -91,7 +91,7 @@
                                      Color="{DynamicResource {x:Static SystemColors.HighlightTextColorKey}}"/>
 
 
-                    <HierarchicalDataTemplate DataType="{x:Type self:FilePatcherViewModel}" ItemsSource="{Binding Children}">
+                    <HierarchicalDataTemplate DataType="{x:Type self:FilePatcherViewModel}" ItemsSource="{Binding Results}">
                         <TextBlock Text="{Binding LabelWithModifiedIndicator}" Background="{Binding Status, Converter={StaticResource StatusBrushConverter}}" Style="{StaticResource StatusForeground}"/>
                     </HierarchicalDataTemplate>
                     <DataTemplate DataType="{x:Type self:ResultViewModel}">

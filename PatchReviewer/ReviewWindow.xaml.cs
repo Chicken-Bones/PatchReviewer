@@ -426,11 +426,8 @@ namespace PatchReviewer
 				return;
 			}
 
-			bool moved = false;
 			CustomMessageBox msgBox = null;
 			if (!new LineRange { start = rightEditRange.start, length = leftEditRange.length}.Contains(appliedRange)) {
-				moved = true;
-
 				// don't show the message if we're just locating a failed patch
 				if (Result.EditingPatch != null) {
 					int patchesMoved = File.Results.TakeWhile(r => r.Start1 < p.start1).Count() - Result.AppliedIndex;
@@ -457,9 +454,7 @@ namespace PatchReviewer
 				return;
 
 			Result.EditingPatch = p;
-
 			filePanel.LoadDiff(File.BaseLines, patcher.ResultLines, underlyingChange: true, original: false);
-			if (moved) File.RecalculateOffsets();
 			ReloadEditingPatch(r.mode != Patcher.Mode.FUZZY);
 			ReCalculateEditRange();
 			filePanel.ScrollToMarked();
