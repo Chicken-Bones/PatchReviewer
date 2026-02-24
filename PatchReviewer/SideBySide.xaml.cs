@@ -196,7 +196,7 @@ namespace PatchReviewer
 
 		public IReadOnlyList<string> EditedLines => rightMatchEditor.UnderlyingLines;
 
-		public void ReplaceEditedLines(IReadOnlyList<string> lines) => LoadDiff(leftMatchEditor.UnderlyingLines, lines, underlyingChange: false);
+		public void ReplaceEditedLines(IReadOnlyList<string> lines) => LoadDiff(leftMatchEditor.UnderlyingLines, lines, underlyingChange: true);
 
 		public bool CanReDiff => rightMatchEditor.LineTree != null && rightMatchEditor.ChangedSinceLoad;
 

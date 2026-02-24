@@ -510,8 +510,17 @@ namespace PatchReviewer
 		}
 
 		private Patch FormatAssistEditedPatchPanel() {
-			var lines = patchPanel.EditedLines.ToArray();
-			for (int i = 1; i < lines.Length; i++) {
+			var lines = patchPanel.EditedLines.ToList();
+
+			// remove blank lines
+			while (lines.Count > 1 && string.IsNullOrWhiteSpace(lines[1]))
+				lines.RemoveAt(1);
+
+			while (lines.Count > 1 && string.IsNullOrWhiteSpace(lines.Last()))
+				lines.RemoveAt(lines.Count - 1);
+
+			// add ' ' to lines that don't start with + or -
+			for (int i = 1; i < lines.Count; i++) {
 				var l = lines[i];
 				if (l.Length == 0 || l[0] != ' ' && l[0] != '-' && l[0] != '+')
 					lines[i] = ' ' + l;
