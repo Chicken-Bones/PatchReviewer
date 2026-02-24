@@ -364,7 +364,7 @@ namespace PatchReviewer
 			patchPanel.ReDiff();
 			editorsInSync = false;
 
-			var p = FormatAssistEditingPatch();
+			var p = FormatAssistEditedPatchPanel();
 			if (p == null)
 				return;
 
@@ -430,24 +430,26 @@ namespace PatchReviewer
 			CustomMessageBox msgBox = null;
 			if (!new LineRange { start = rightEditRange.start, length = leftEditRange.length}.Contains(appliedRange)) {
 				moved = true;
-				int patchesMoved = File.Results.TakeWhile(r => r.Start1 < p.start1).Count() - Result.AppliedIndex;
-				int linesMoved = p.start1 - Result.Start1;
 
-				msgBox = new CustomMessageBox {
-					Title = "Moved Patch",
-					Message = $"Patch has been moved {(patchesMoved > 0 ? "Down" : "Up")} {Math.Abs(patchesMoved)} patches and {Math.Abs(linesMoved)} lines." +
-					$"\nLoad assisted patch?",
-					Image = MessageBoxImage.Question
-				};
-			}
-			if (r.mode == Patcher.Mode.FUZZY) {
-				if (msgBox == null) {
+				// don't show the message if we're just locating a failed patch
+				if (Result.EditingPatch != null) {
+					int patchesMoved = File.Results.TakeWhile(r => r.Start1 < p.start1).Count() - Result.AppliedIndex;
+					int linesMoved = p.start1 - Result.Start1;
+
 					msgBox = new CustomMessageBox {
-						Title = "Fuzzy Patch",
-						Message = "Fuzzy patch mode was required to make the patch succeed.\nLoad assisted patch?",
+						Title = "Moved Patch",
+						Message = $"Patch has been moved {(patchesMoved > 0 ? "Down" : "Up")} {Math.Abs(patchesMoved)} patches and {Math.Abs(linesMoved)} lines." +
+						$"\nLoad assisted patch?",
 						Image = MessageBoxImage.Question
 					};
 				}
+			}
+			if (r.mode == Patcher.Mode.FUZZY) {
+				msgBox ??= new CustomMessageBox {
+					Title = "Fuzzy Patch",
+					Message = "Fuzzy patch mode was required to make the patch succeed.\nLoad assisted patch?",
+					Image = MessageBoxImage.Question
+				};
 				msgBox.Message += $" (Quality { (int)(r.fuzzyQuality * 100)})";
 			}
 
@@ -512,7 +514,7 @@ namespace PatchReviewer
 			return MessageBoxResult.OK;
 		}
 
-		private Patch FormatAssistEditingPatch() {
+		private Patch FormatAssistEditedPatchPanel() {
 			var lines = patchPanel.EditedLines.ToArray();
 			for (int i = 1; i < lines.Length; i++) {
 				var l = lines[i];
