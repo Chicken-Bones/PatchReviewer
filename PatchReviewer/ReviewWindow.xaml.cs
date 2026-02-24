@@ -44,10 +44,9 @@ namespace PatchReviewer
 
 		private bool editorsInSync;
 		private bool suppressScrollToMarked;
-		//private Patch userPatch;
 
 		public ReviewWindow(IEnumerable<FilePatcher> files, string commonBasePath = null) {
-			Files = new ObservableCollection<FilePatcherViewModel>(files.Select(f => new FilePatcherViewModel(f, commonBasePath)).OrderBy(f => f.Label));
+			Files = new ObservableCollection<FilePatcherViewModel>(files.Select(f => new FilePatcherViewModel(f, commonBasePath)).OrderBy(f => DirectoriesFirstSortKey(f.Label)));
 
 			InitializeComponent();
 			SetupEditors();
@@ -820,6 +819,11 @@ namespace PatchReviewer
 		}
 
 		#endregion
+
+		private static string DirectoriesFirstSortKey(string path) {
+			int lastSep = path.LastIndexOfAny(['/', '\\']) + 1;
+			return path.Substring(0, lastSep) + "\uFFFF" + path.Substring(lastSep);
+		}
 
 		private class EditWarningReadOnlySectionProvider : IReadOnlySectionProvider
 		{
