@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -172,7 +172,14 @@ namespace PatchReviewer
 
 		public void DiscardOriginalFileMarker() => undoStack.DiscardOriginalFileMarker();
 
-		public LineRange FromUnderlying(LineRange range) => range.Map(LineTree.Access(side).CombinedIndexOf);
+		public LineRange FromUnderlying(LineRange range)
+		{
+			var access = LineTree.Access(side);
+			if (range.length == 0)
+				return new LineRange { start = access.CombinedIndexOf(range.start)};
+
+			return new LineRange { start = access.CombinedIndexOf(range.start), last = access.CombinedIndexOf(range.last) };
+		}
 
 		public void MarkRange(LineRange range) {
 			rangeMarker.LineRange = range + 1;

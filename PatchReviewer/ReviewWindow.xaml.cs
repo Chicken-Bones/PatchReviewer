@@ -309,12 +309,9 @@ namespace PatchReviewer
 			//mark patch ranges
 			var p = Result.EditingPatch;
 			if (p != null)
-				filePanel.MarkRange(
-					new LineRange { start = p.start1, length = p.length1},
-					new LineRange { start = p.start2, length = p.length2});
+				filePanel.MarkRange(p.Range1, p.Range2);
 			else if (Result.End1 <= File.BaseLines.Length) // mark the patch we were working on in the left hand side
-				filePanel.MarkRange(
-					new LineRange { start = Result.Start1, end = Result.End1 });
+				filePanel.MarkRange(Result.Range1);
 			else
 				filePanel.ClearRangeMarkers();
 
