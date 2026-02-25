@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:self="clr-namespace:PatchReviewer"
              mc:Ignorable="d" 
+             Title="Patch Reviewer"
              d:DesignHeight="800" d:DesignWidth="1200"
              DataContext="{Binding RelativeSource={RelativeSource Self}}">
 
