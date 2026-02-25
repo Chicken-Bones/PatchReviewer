@@ -44,5 +44,9 @@ namespace PatchReviewer
 			new InputGestureCollection {
 				new KeyGesture(Key.R, ModifierKeys.Control)
 			});
+		public static readonly RoutedUICommand SplitPatch = new RoutedUICommand("Split Patch", "SplitPatch", typeof(ReviewWindow),
+			new InputGestureCollection {
+				new KeyGesture(Key.F6)
+			});
 	}
 }

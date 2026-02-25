@@ -210,6 +210,9 @@ namespace PatchReviewer
 			return lineTree.Access(isRight).IndexOf(node);
 		}
 
+		public LineRange GetSelectedUnderlyingLines(bool isRight) =>
+			(isRight ? rightMatchEditor : leftMatchEditor).GetSelectedUnderlyingLines();
+
 		public List<Patch> Diff() {
 			var lineTree = rightMatchEditor.LineTree;
 			var lines1 = leftMatchEditor.UnderlyingLines;

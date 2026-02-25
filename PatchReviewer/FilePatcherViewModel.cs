@@ -177,6 +177,30 @@ namespace PatchReviewer
 		}
 
 		/// <summary>
+		/// Split a result. Patches are in positional order; selected is the one that stays on the current result.
+		/// </summary>
+		public void SplitResult(ResultViewModel result, List<Patch> patches, Patch selected) {
+			int idx = result.OrigIndex;
+
+			foreach (var r in _results.Items)
+				if (r != result && r.OrigIndex > idx)
+					r.OrigIndex += patches.Count - 1;
+
+			foreach (var patch in patches) {
+				var r = new Patcher.Result { patch = patch, success = false };
+				if (patch == selected) {
+					result.ReplaceWith(r);
+					result.OrigIndex = idx++;
+				}
+				else {
+					_results.Add(new ResultViewModel(this, r, idx++) { IsSplit = true });
+				}
+			}
+
+			ResultsModified = true;
+		}
+
+		/// <summary>
 		/// Remove a rejected patch entirely
 		/// </summary>
 		public void DeleteRejectedPatch(ResultViewModel result) {

@@ -785,6 +785,98 @@ namespace PatchReviewer
 			ApproveUserPatch(reject: true);
 		}
 
+		private void CanExecuteSplitPatch(object sender, CanExecuteRoutedEventArgs e) {
+			e.CanExecute = Result != null && patchPanel.GetSelectedUnderlyingLines(isRight: false).length > 0;
+		}
+
+		private void ExecuteSplitPatch(object sender, ExecutedRoutedEventArgs e) {
+			var originalPatch = Result.OriginalPatch;
+
+			// Get selected underlying lines from the left patch editor, collapsing past filler lines
+			var selectedLines = patchPanel.GetSelectedUnderlyingLines(isRight: false);
+			if (selectedLines.length == 0)
+				return;
+
+			// Underlying line 0 = header, 1+ = diffs. Subtract header offset and clamp to diff range
+			var diffRange = LineRange.Intersection(
+				selectedLines - 1,
+				new LineRange { start = 0, length = originalPatch.diffs.Count });
+
+			if (diffRange.length <= 0)
+				return;
+
+			// Build up to 3 sub-patches
+			var patches = new List<Patch>();
+			Patch selected = null;
+
+			var ranges = new[] {
+				("before",   new LineRange { start = 0, end = diffRange.start }),
+				("selected", diffRange),
+				("after",    new LineRange { start = diffRange.end, end = originalPatch.diffs.Count }),
+			};
+
+			int end1 = originalPatch.start1, end2 = originalPatch.start2;
+			foreach (var (name, range) in ranges) {
+				if (range.length <= 0)
+					continue;
+
+				var p = new Patch {
+					start1 = end1,
+					start2 = end2,
+					diffs = originalPatch.diffs.Slice(range).ToList()
+				};
+				p.RecalculateLength();
+				end1 = p.start1 + p.length1;
+				end2 = p.start2 + p.length2;
+
+				// Skip parts with no actual changes (only EQUAL lines)
+				if (!p.diffs.Any(d => d.op != Operation.EQUAL))
+					continue;
+
+				if (!p.ContextLines.Any()) {
+					new CustomMessageBox {
+						Title = "Cannot Split",
+						Message = $"The '{name}' portion has no context lines. Each split part needs at least one context line to be a valid patch.",
+						Image = MessageBoxImage.Error
+					}.ShowDialogOk("Cancel");
+					return;
+				}
+
+				patches.Add(p);
+				if (name == "selected")
+					selected = p;
+			}
+
+			if (selected == null) {
+				new CustomMessageBox {
+					Title = "Cannot Split",
+					Message = "The selected portion has no changes.",
+					Image = MessageBoxImage.Error
+				}.ShowDialogOk("Cancel");
+				return;
+			}
+
+			if (patches.Count <= 1) {
+				new CustomMessageBox {
+					Title = "Nothing to Split",
+					Message = "The selection covers the entire patch.",
+					Image = MessageBoxImage.Error
+				}.ShowDialogOk("Cancel");
+				return;
+			}
+
+			var unappliedLines = PatchedLinesExcludingCurrentResult.ToArray();
+
+			// Reset the current result to the kept patch and create new SPLIT results
+			File.SplitResult(Result, patches, selected);
+
+			// Update PatchedLines without the old patch (triggers ReloadPanes), essentially converting the current patch to 'failed'
+			File.PatchedLines = unappliedLines;
+
+			// Try and re-apply the selected patch
+			TryReapplyEditingPatch(new Patch(Result.OriginalPatch), showPrompts: true);
+		}
+
 		private void CanExecuteRefocusPatch(object sender, CanExecuteRoutedEventArgs e) {
 			e.CanExecute = Result != null;
 		}

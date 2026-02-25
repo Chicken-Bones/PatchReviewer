@@ -226,6 +226,37 @@ namespace PatchReviewer
 		}
 
 		public bool ChangedSinceLoad => changeCountSinceLoad != 0;
+
+		public LineRange GetSelectedUnderlyingLines() {
+			var segment = textEditor.TextArea.Selection.SurroundingSegment;
+			if (segment == null || segment.Length == 0 || lineTree == null)
+				return default;
+
+			var doc = textEditor.Document;
+			int startEditorLine = doc.GetLineByOffset(segment.Offset).LineNumber;
+			int endEditorLine = doc.GetLineByOffset(segment.EndOffset).LineNumber;
+
+			// Exclude the last editor line if no content on it is selected
+			var endDocLine = doc.GetLineByNumber(endEditorLine);
+			if (segment.EndOffset == endDocLine.Offset && endEditorLine > startEditorLine)
+				endEditorLine--;
+
+			// Collapse inward past filler lines
+			var startNode = lineTree[startEditorLine - 1];
+			while (startNode != null && !startNode.HasLine(side))
+				startNode = startNode.Next;
+
+			var endNode = lineTree[endEditorLine - 1];
+			while (endNode != null && !endNode.HasLine(side))
+				endNode = endNode.Prev;
+
+			if (startNode == null || endNode == null)
+				return default;
+
+			var access = lineTree.Access(side);
+			return new LineRange { first = access.IndexOf(startNode), last = access.IndexOf(endNode) };
+		}
+
 		#endregion
 
 		private void AttachToDocument() {

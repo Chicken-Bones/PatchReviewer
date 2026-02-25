@@ -29,6 +29,7 @@
     <Resource Include="Images\Patch.png" />
     <Resource Include="Images\PrevDiff.png" />
     <Resource Include="Images\Refresh.png" />
+    <Resource Include="Images\Split.png" />
     <Resource Include="Images\Save.png" />
     <Resource Include="Images\Refocus.png" />
   </ItemGroup>

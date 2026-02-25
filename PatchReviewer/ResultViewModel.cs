@@ -8,8 +8,10 @@ namespace PatchReviewer
 	public class ResultViewModel : INotifyPropertyChanged
 	{
 		public FilePatcherViewModel File { get; }
-		private Patcher.Result Result { get; }
+		private Patcher.Result Result { get; set; }
 		public int OrigIndex { get; set; }
+
+		public bool IsSplit { get; set; }
 
 		public ResultViewModel(FilePatcherViewModel file, Patcher.Result result, int origIndex) {
 			File = file;
@@ -117,7 +119,12 @@ namespace PatchReviewer
 
 		public string LabelWithModifiedIndicator => Label + (ModifiedInEditor ? " *" : "");
 
-		public string Label => IsRejected ? $"REJECTED: {OriginalPatch.Header}" : StatusResult.Summary();
+		public string Label {
+			get {
+				var label = IsRejected ? $"REJECTED: {OriginalPatch.Header}" : StatusResult.Summary();
+				return IsSplit ? $"(Split) {label}" : label;
+			}
+		}
 		public string Title => $"{File.Label} {Label}";
 
 		public string MovedPatchCountText { get; private set; } = "";
@@ -152,6 +159,14 @@ namespace PatchReviewer
 			OnPropertyChanged(nameof(Start1)); // trigger reordering in the collection view
 			OnLabelPropertiesChanged();
 			File.ResultsModified = true;
+		}
+
+		internal void ReplaceWith(Patcher.Result result) {
+			Result = result;
+			EditingPatch = null;
+
+			OnPropertyChanged(nameof(Start1));
+			OnLabelPropertiesChanged();
 		}
 
 		internal void ConvertRejectedToFailed() {

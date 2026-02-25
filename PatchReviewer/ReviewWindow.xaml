@@ -25,6 +25,7 @@
         <CommandBinding Command="self:Commands.Revert" CanExecute="CanExecuteRevert" Executed="ExecuteRevert"></CommandBinding>
         <CommandBinding Command="self:Commands.ApprovePatch" CanExecute="CanExecuteApprove" Executed="ExecuteApprove"></CommandBinding>
         <CommandBinding Command="self:Commands.RejectPatch" CanExecute="CanExecuteReject" Executed="ExecuteReject"></CommandBinding>
+        <CommandBinding Command="self:Commands.SplitPatch" CanExecute="CanExecuteSplitPatch" Executed="ExecuteSplitPatch"></CommandBinding>
     </Window.CommandBindings>
 
     <DockPanel>
@@ -62,6 +63,9 @@
             </Button>
             <Button Command="self:Commands.Rediff" ToolTip="Recalculate Diff (F5)">
                 <Image Source="Images/Refresh.png" Style="{StaticResource ImageEnabled}" />
+            </Button>
+            <Button Command="self:Commands.SplitPatch" ToolTip="Split Patch (F6)">
+                <Image Source="Images/Split.png" Style="{StaticResource ImageEnabled}" />
             </Button>
             <Button Command="self:Commands.Revert" ToolTip="Revert (Ctrl+R)">
                 <Image Source="Images/Revert.png" Style="{StaticResource ImageEnabled}" />
