@@ -33,8 +33,8 @@ namespace PatchReviewer
 
 			var changes = _results.Connect();
 			changes
-				.Sort(SortExpressionComparer<ResultViewModel>.Ascending(x => x.Start1), resort: changes.WhenPropertyChanged(x => x.Start1).Select(_ => Unit.Default))
-				.Bind(out _sortedResults)
+				.Sort(SortExpressionComparer<ResultViewModel>.Ascending(x => x.Start1), resort: changes.WhenPropertyChanged(x => x.Start1).Select(_ => Unit.Default), resetThreshold: int.MaxValue)
+				.Bind(out _sortedResults, resetThreshold: int.MaxValue)
 				.Subscribe(_ => RecalculateOffsets());
 
 			changes
