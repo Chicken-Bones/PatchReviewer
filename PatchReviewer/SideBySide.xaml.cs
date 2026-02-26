@@ -233,19 +233,21 @@ namespace PatchReviewer
 			var lineTree = rightMatchEditor.LineTree;
 			var leftTree = lineTree.Access(side: false);
 			var rightTree = lineTree.Access(side: true);
-
-			// grab context
 			var firstNode = rightTree[editRange.first];
+			var lastNode = rightTree[editRange.last];
+
+			// Not sure if this was previously covering for a bug in setting the EditableRange correctly
+			/*
 			while (firstNode.Prev != null && !firstNode.Prev.HasRightLine)
 				firstNode = firstNode.Prev;
 			while (firstNode.Prev != null && firstNode.Prev.SidesEqual)
 				firstNode = firstNode.Prev;
 
-			var lastNode = rightTree[editRange.last];
 			while (lastNode.Next != null && !lastNode.Next.HasRightLine)
 				lastNode = lastNode.Next;
 			while (lastNode.Next != null && lastNode.Next.SidesEqual)
 				lastNode = lastNode.Next;
+			*/
 
 			// extract matching from tree
 			var range0 = new LineRange { first = lineTree.IndexOf(firstNode), last = lineTree.IndexOf(lastNode)};
