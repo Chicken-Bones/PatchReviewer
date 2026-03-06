@@ -34,6 +34,6 @@
     <Resource Include="Images\Refocus.png" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DiffPatch\DiffPatch.csproj" />
+    <ProjectReference Include="..\DiffPatch\src\DiffPatch.csproj" />
   </ItemGroup>
 </Project>
