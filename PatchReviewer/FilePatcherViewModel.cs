@@ -33,7 +33,9 @@ namespace PatchReviewer
 
 			var changes = _results.Connect();
 			changes
-				.Sort(SortExpressionComparer<ResultViewModel>.Ascending(x => x.Start1), resort: changes.WhenPropertyChanged(x => x.Start1).Select(_ => Unit.Default), resetThreshold: int.MaxValue)
+				.AutoRefreshOnObservable(static x => x.WhenPropertyChanged(propertyAccessor: static x => x.Start1, notifyOnInitialValue: false))
+				.Sort(SortExpressionComparer<ResultViewModel>.Ascending(x => x.Start1), resetThreshold: int.MaxValue)
+				.SuppressRefresh() // https://github.com/reactivemarbles/DynamicData/issues/1066
 				.Bind(out _sortedResults, resetThreshold: int.MaxValue)
 				.Subscribe(_ => RecalculateOffsets());
 
